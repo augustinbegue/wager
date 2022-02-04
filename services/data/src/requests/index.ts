@@ -1,6 +1,6 @@
 import axios from 'axios';
 import moment from 'moment';
-import { MatchesResponse } from '../../../types';
+import { CompetitionsResponse, MatchesResponse, plan } from '../../../types';
 
 if (!process.env.FOOTBALL_DATA_TOKEN)
     throw new Error('Environement variable FOOTBALL_DATA_TOKEN is not defined');
@@ -12,19 +12,49 @@ export const fbdata = axios.create({
     }
 });
 
+export const tier: plan = 'TIER_ONE';
+
 /**
  * Get matches of the week for all competitions
  */
 export async function getMatchesOfTheWeek(): Promise<MatchesResponse> {
-    let dateFrom = moment().subtract(1, 'days').format('YYYY-MM-DD');
-    let dateTo = moment().add(6, 'days').format('YYYY-MM-DD');
+    try {
+        let dateFrom = moment().subtract(1, 'days').format('YYYY-MM-DD');
+        let dateTo = moment().add(6, 'days').format('YYYY-MM-DD');
 
-    let res = await fbdata.get('matches', {
-        params: {
-            dateFrom,
-            dateTo
+        let res = await fbdata.get('matches', {
+            params: {
+                dateFrom,
+                dateTo
+            }
+        })
+
+        return res.data;
+    } catch (error) {
+        console.error("[getMatchesOfTheWeek] Error: ", error);
+        return {
+            count: 0,
+            matches: [],
+            filters: {}
         }
-    })
+    }
+}
 
-    return res.data;
+/**
+ * Get all competitions of a tier
+ */
+export async function getTierCompetitions(): Promise<CompetitionsResponse> {
+    try {
+        let res = await fbdata.get(`competitions?plan=${tier}`);
+
+        return res.data;
+    } catch (error) {
+        console.error("[getTierCompetitions] Error: ", error);
+
+        return {
+            count: 0,
+            competitions: [],
+            filters: {}
+        }
+    }
 }

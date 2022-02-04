@@ -15,3 +15,6 @@ I've therefore decided to restart it completely, new techs, new experience and n
 **NodeJS** - Api and Data Gathering/Scraping\
 _Typescript, Express, Axios_\
 `./services`
+
+**PostgreSQL** - Data storage\
+`./services`

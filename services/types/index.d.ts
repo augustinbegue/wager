@@ -8,6 +8,8 @@ export type winner = 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW';
 
 export type duration = 'REGULAR' | 'EXTRA_TIME' | 'PENALTIES';
 
+export type plan = 'TIER_ONE' | 'TIER_TWO' | 'TIER_THREE' | 'TIER_FOUR';
+
 export interface Filters {
     competition?: string;
     season?: string;
@@ -22,17 +24,20 @@ export interface Filters {
     limit?: number;
     offset?: number;
     standingType?: standingType;
-    permission?: string;
+    plan?: plan;
 }
 
-export interface Competition {
+export interface Area {
     id: number;
     name: string;
-    area: {
-        name: string;
-        code: string;
-        ensignUrl: string;
-    };
+    countryCode: string;
+    ensignUrl: string;
+}
+
+export interface CompetitionShort {
+    id: number;
+    name: string;
+    area: Area;
 }
 
 export interface Season {
@@ -45,7 +50,7 @@ export interface Season {
 
 export interface Match {
     id: number;
-    competition: Competition;
+    competition: CompetitionShort;
     season: Season;
     utcDate: string;
     status: status;
@@ -56,6 +61,22 @@ export interface Match {
     score: {
         winner: winner;
         duration: duration;
+        fullTime: {
+            homeTeam: number;
+            awayTeam: number;
+        };
+        halfTime: {
+            homeTeam: number;
+            awayTeam: number;
+        };
+        extraTime: {
+            homeTeam: number;
+            awayTeam: number;
+        };
+        penalties: {
+            homeTeam: number;
+            awayTeam: number;
+        };
     };
     homeTeam: {
         id: number;
@@ -75,4 +96,21 @@ export interface MatchesResponse {
     count: number;
     filters: Filters;
     matches: Match[];
+}
+
+export interface Competition {
+    id: number;
+    area: Area;
+    name: string;
+    code: string;
+    emblemUrl: string;
+    plan: plan;
+    currentSeason: Season;
+    numberOfAvailableSeasons: number;
+    lastUpdated: string;
+}
+export interface CompetitionsResponse {
+    count: number;
+    filters: Filters;
+    competitions: Competition[];
 }

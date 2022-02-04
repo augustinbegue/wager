@@ -1,0 +1,15 @@
+{
+  "name": "wager-services",
+  "workspaces": [
+    "api",
+    "data"
+  ],
+  "scripts": {
+    "clean": "tsc --build --clean",
+    "build": "tsc --build",
+    "watch": "tsc --build --watch"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  }
+}

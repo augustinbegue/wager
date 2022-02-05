@@ -6,9 +6,7 @@
     "scraper"
   ],
   "scripts": {
-    "clean": "tsc --build --clean",
-    "build": "tsc --build",
-    "watch": "tsc --build --watch"
+    "build": "npm run build -ws"
   },
   "dependencies": {
     "dotenv": "^16.0.0"

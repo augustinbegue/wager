@@ -1,6 +1,7 @@
 {
     "name": "wager-data",
     "scripts": {
+        "build": "tsc --build",
         "dev": "nodemon --config nodemon.json src/index.ts",
         "dev:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts"
     },

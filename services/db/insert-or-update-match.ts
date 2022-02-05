@@ -1,5 +1,5 @@
 import { Match, status } from '../types/data';
-import { pool } from "./index";
+import { pool } from ".";
 
 export async function insertOrUpdateMatch(match: Match): Promise<boolean> {
     try {

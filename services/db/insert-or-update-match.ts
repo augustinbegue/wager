@@ -1,16 +1,31 @@
 import { Match, status } from '../types/data';
 import { pool } from ".";
 
-export async function insertOrUpdateMatch(match: Match): Promise<boolean> {
+export async function insertOrUpdateMatch(match: Match): Promise<number> {
     try {
-        let query = {
-            text: `SELECT "id", "date", "lastUpdated", "status" FROM matches WHERE "id" = $1`,
-            values: [match.id]
+        let query: any;
+
+        if (match.id != -1) {
+            query = {
+                text: `SELECT "id", "date", "lastUpdated", "status" FROM matches WHERE "id" = $1`,
+                values: [match.id]
+            }
+        } else {
+            query = {
+                text: `SELECT "id", "date", "lastUpdated", "status" FROM matches
+                WHERE cast("data"->>'matchday' as integer) = $1
+                AND "homeTeamId" = $2
+                AND "awayTeamId" = $3`,
+                values: [match.matchday, match.homeTeam.id, match.awayTeam.id]
+            }
         }
 
         let checkResult = await pool.query(query);
 
         if (checkResult.rowCount != 0) {
+            // Ensure the id is not -1
+            match.id = checkResult.rows[0].id;
+
             let status = checkResult.rows[0].status as status;
             // Match already exists, we check if it needs to be updated
             let lastUpdated = new Date(checkResult.rows[0].lastUpdated);
@@ -45,18 +60,17 @@ export async function insertOrUpdateMatch(match: Match): Promise<boolean> {
 
                 await pool.query(updateQuery);
 
-                console.log("Updated match: " + match.id);
+                // console.log("Updated match: " + match.id);
 
-                return true;
+                return match.id;
             } else {
-                return false;
+                return match.id;
             }
         } else {
             let insertQuery = {
-                text: `INSERT INTO matches("id", "competitionId", "seasonId", "date", "lastUpdated", "homeTeamId", "awayTeamId", "status", "data") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                text: `INSERT INTO matches("competitionId", "seasonId", "date", "lastUpdated", "homeTeamId", "awayTeamId", "status", "data") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING "id"`,
 
                 values: [
-                    match.id,
                     match.competition.id,
                     match.season.id,
                     new Date(match.utcDate),
@@ -68,15 +82,15 @@ export async function insertOrUpdateMatch(match: Match): Promise<boolean> {
                 ]
             }
 
-            await pool.query(insertQuery);
+            let insertResult = await pool.query(insertQuery);
 
-            console.log("Inserted match: " + match.id);
+            console.log("Inserted match: " + insertResult.rows[0].id);
 
-            return true;
+            return insertResult.rows[0].id;
         }
     } catch (error) {
         console.error("Error when inserting match: " + match.id);
         console.error(error);
-        return false;
+        return match.id;
     }
 }

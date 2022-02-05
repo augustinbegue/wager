@@ -108,6 +108,7 @@ export interface Competition {
     currentSeason: Season;
     numberOfAvailableSeasons: number;
     lastUpdated: string;
+    teams: number[];
 }
 export interface CompetitionsResponse {
     count: number;

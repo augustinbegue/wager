@@ -1,8 +1,8 @@
 import moment from "moment";
-import { Competition, Match, duration, winner, Team } from "../../../types/data";
+import { Competition, Match, duration, winner, Team, status } from "../../../types/data";
 import { ScrapedMatch, ScrapedTeam } from "../../../types/scraper";
 
-export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: Competition): Match[] {
+export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: Competition, teams: Team[], status: status = 'FINISHED'): Match[] {
     return scrapedMatches.map((scrapedMatch) => {
         let fullTime = {
             homeTeam: parseInt(scrapedMatch.homeScoreFullStr),
@@ -15,14 +15,26 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
         let duration: duration = 'REGULAR';
 
         let date = new Date();
-        let [day, month] = scrapedMatch.timeStr.split(" ")[0].split(".");
-        date.setFullYear(
-            moment(competition.currentSeason.startDate).year(),
-            parseInt(month) - 1,
-            parseInt(day)
-        );
-        let [hours, minutes] = scrapedMatch.timeStr.split(" ")[1].split(":");
-        date.setHours(parseInt(hours), parseInt(minutes));
+
+        if (scrapedMatch.elapsedMinutes) {
+            if (scrapedMatch.elapsedMinutes.startsWith('Half Time')) {
+                status = 'PAUSED';
+                scrapedMatch.elapsedMinutes = '45';
+            } else if (isNaN(parseInt(scrapedMatch.elapsedMinutes))) {
+                scrapedMatch.elapsedMinutes = '90';
+            }
+            date = new Date(date.getTime() - (parseInt(scrapedMatch.elapsedMinutes) * 60000));
+            date.setSeconds(0, 0);
+        } else if (scrapedMatch.timeStr) {
+            let [day, month] = scrapedMatch.timeStr.split(" ")[0].split(".");
+            date.setFullYear(
+                moment(competition.currentSeason.startDate).year(),
+                parseInt(month) - 1,
+                parseInt(day)
+            );
+            let [hours, minutes] = scrapedMatch.timeStr.split(" ")[1].split(":");
+            date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
 
         let winner: winner = fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM';
 
@@ -34,17 +46,17 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
             },
             season: competition.currentSeason,
             utcDate: date.toUTCString(),
-            status: 'FINISHED',
-            matchday: scrapedMatch.currentMatchday,
+            status: status,
+            matchday: ['FINISHED', 'SCHEDULED'].includes(status) ? scrapedMatch.currentMatchday : competition.currentSeason.currentMatchday,
             stage: '',
             group: null,
             lastUpdated: new Date().toUTCString(),
             homeTeam: {
-                id: -1,
+                id: teams.find((team) => team.name === scrapedMatch.homeTeamName)?.id || -1,
                 name: scrapedMatch.homeTeamName,
             },
             awayTeam: {
-                id: -1,
+                id: teams.find((team) => team.name === scrapedMatch.awayTeamName)?.id || -1,
                 name: scrapedMatch.awayTeamName,
             },
             score: {

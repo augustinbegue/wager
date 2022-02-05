@@ -11,9 +11,9 @@
         "fixtures": "fixtures/",
         "standings": "standings/"
     },
-    "updateTeams": true,
+    "updateTeams": false,
     "updateFixtures": true,
     "updateResults": true,
-    "updateCompetitions": true,
-    "debug": true
+    "updateCompetitions": false,
+    "debug": false
 }

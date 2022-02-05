@@ -1,5 +1,6 @@
 export interface ScrapedMatch {
-    timeStr: string;
+    timeStr?: string;
+    elapsedMinutes?: string;
     homeTeamName: string;
     awayTeamName: string;
     homeScoreFullStr: string;

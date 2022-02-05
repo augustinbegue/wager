@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { ScraperConfig } from '../../types/configs';
 import { Competition, Match, Team } from '../../types/data';
-import { insertOrUpdateCompetition, insertOrUpdateTeam } from '../../db';
+import { getCompetition, getTeam, insertOrUpdateCompetition, insertOrUpdateMatch, insertOrUpdateTeam } from '../../db';
 
 // Load dotenv before importing anything else
 dotenv.config();
@@ -9,7 +9,8 @@ dotenv.config();
 import { readFileSync } from 'fs';
 import puppeteer from 'puppeteer';
 import { parseScrapedMatches, parseScrapedTeams } from './controllers/parsers';
-import { scrapeCompetitionInfo, scrapeResults, scrapeTeams } from './controllers/scrapers';
+import { scrapeCompetitionInfo, scrapeLive, scrapeResults, scrapeTeams } from './controllers/scrapers';
+import { getTeamsByCompetition } from '../../db/get-teams';
 
 (async function () {
     const config = JSON.parse(readFileSync(__dirname + "/config.json", 'utf8')) as ScraperConfig;
@@ -50,34 +51,59 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
 
     let competition: Competition;
     let teams: Team[];
-    let matches: Match[];
+    let matches: Match[] = [];
 
     // Scrape competition info
-    if (config.updateCompetitions || true) {
+    if (config.updateCompetitions) {
         competition = await scrapeCompetitionInfo(page, path);
 
         competition.id = await insertOrUpdateCompetition(competition);
-    } /* else {
-        // TODO: Get competition from db
-    } */
+    } else {
+        let res = await getCompetition({ code: path });
+
+        if (!res) {
+            throw new Error("Competition with code '" + path + "' not found. You may need to enable config.updateCompetitions.");
+        }
+
+        competition = res?.data;
+        competition.id = res.id;
+    }
 
     // Scrape teams in the competition
     if (config.updateTeams) {
         let scrapedTeams = await scrapeTeams(config, page, baseUrl, path);
         teams = parseScrapedTeams(scrapedTeams);
 
-        for (let team of teams) {
+        competition.teams = [];
+        for (let i = 0; i < teams.length; i++) {
+            const team = teams[i];
             team.id = await insertOrUpdateTeam(team);
+            competition.teams.push(team.id);
         }
+
+        competition.lastUpdated = new Date().toUTCString();
+        await insertOrUpdateCompetition(competition);
     } else {
-        // TODO: Get teams from db
+        teams = await getTeamsByCompetition(competition.id);
+
+        if (teams.length === 0) {
+            throw new Error("No teams found for competition with id '" + competition.id + "'. You may need to enable config.updateTeams.");
+        }
     }
 
     if (config.updateResults) {
         let scrapedMatches = await scrapeResults(config, page, baseUrl, path);
-        matches = parseScrapedMatches(scrapedMatches, competition);
-    } else {
-        // TODO: Get matches from db
+        competition.currentSeason.currentMatchday = scrapedMatches.reduce((max, match) => { return Math.max(max, match.currentMatchday); }, 0);
+
+        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams)];
+    }
+
+    let liveScrapedMatches = await scrapeLive(config, page, baseUrl, path);
+    matches = [...matches, ...parseScrapedMatches(liveScrapedMatches, competition, teams, 'IN_PLAY')];
+
+    for (let i = 0; i < matches.length; i++) {
+        const match = matches[i];
+        match.id = await insertOrUpdateMatch(match);
     }
 
     await page.close();

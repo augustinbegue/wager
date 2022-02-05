@@ -17,8 +17,6 @@ export async function insertOrUpdateCompetition(competition: Competition) {
             values: [competition.id]
         }
 
-        console.log(checkQuery);
-
         checkResult = await pool.query(checkQuery);
     }
 

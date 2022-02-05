@@ -28,30 +28,31 @@ export interface Filters {
 }
 
 export interface Area {
-    id: number;
+    id: string;
     name: string;
     countryCode: string;
     ensignUrl: string;
 }
 
 export interface CompetitionShort {
-    id: number;
+    id: string;
     name: string;
     area?: Area;
 }
 
-export interface Season {
-    id: number;
+export interface DBSeason {
+    id: string;
     startDate: string;
     endDate: string;
+    competition?: string;
     currentMatchday: number;
-    winner: null;
+    winner: number | null;
 }
 
 export interface Match {
-    id: number;
+    id: string;
     competition: CompetitionShort;
-    season: Season;
+    season: DBSeason;
     utcDate: string;
     status: status;
     matchday: number;
@@ -79,15 +80,15 @@ export interface Match {
         };
     };
     homeTeam: {
-        id: number;
+        id: string;
         name: string;
     };
     awayTeam: {
-        id: number;
+        id: string;
         name: string;
     };
     referees?: {
-        id: number;
+        id: string;
         name: string;
     }[];
 }
@@ -99,17 +100,27 @@ export interface MatchesResponse {
 }
 
 export interface Competition {
-    id: number;
+    id: string;
     area?: Area;
     name: string;
     code: string;
     emblemUrl: string;
     plan?: plan;
-    currentSeason: Season;
+    currentSeason: DBSeason;
     numberOfAvailableSeasons: number;
     lastUpdated: string;
-    teams: number[];
+    teams: string[];
 }
+
+export interface DBCompetition {
+    id: string;
+    name: string;
+    emblemUrl: string;
+    lastUpdated: string;
+    teams: string[];
+    data: Competition;
+}
+
 export interface CompetitionsResponse {
     count: number;
     filters: Filters;
@@ -117,7 +128,7 @@ export interface CompetitionsResponse {
 }
 
 export interface Team {
-    id: number;
+    id: string;
     area?: Area;
     name: string;
     shortName: string;

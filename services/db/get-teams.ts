@@ -26,9 +26,9 @@ export async function getTeam(options: { id?: number, name?: string }) {
     }
 }
 
-export async function getTeamsByCompetition(competitionId: number) {
+export async function getTeamsByCompetition(competitionId: string) {
     let competitionQuery = {
-        text: `SELECT "data"->'teams' as "teams" FROM competitions WHERE "id" = $1`,
+        text: `SELECT "teams" FROM competitions WHERE "id" = cast($1 as bigint)`,
         values: [
             competitionId
         ]

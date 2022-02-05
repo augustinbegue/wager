@@ -1,5 +1,5 @@
 import { ScraperConfig } from '../../../types/configs';
-import { Competition, Season } from '../../../types/data';
+import { Competition, DBSeason } from '../../../types/data';
 import { ScrapedMatch, ScrapedTeam } from '../../../types/scraper';
 import puppeteer from 'puppeteer';
 import { closeBanners, loadFullTable } from './utils';
@@ -157,7 +157,9 @@ export async function scrapeTeams(config: ScraperConfig, page: puppeteer.Page, b
     return scrapedTeams;
 }
 
-export async function scrapeCompetitionInfo(page: puppeteer.Page, path: string) {
+export async function scrapeCompetitionInfo(page: puppeteer.Page, baseUrl: string, path: string) {
+    await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
+
     const emblemUrl = (await page.evaluate(() => {
         return new Promise((resolve, reject) => {
             let crestContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__logo.heading__logo--1") as HTMLDivElement;
@@ -197,8 +199,8 @@ export async function scrapeCompetitionInfo(page: puppeteer.Page, path: string) 
     const season = await page.evaluate(() => {
         let yearContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__info") as HTMLDivElement;
 
-        let season: Season = {
-            id: -1,
+        let season: DBSeason = {
+            id: "-1",
             currentMatchday: -1,
             startDate: "",
             endDate: "",
@@ -218,7 +220,7 @@ export async function scrapeCompetitionInfo(page: puppeteer.Page, path: string) 
     });
 
     let competition: Competition = {
-        id: -1,
+        id: "-1",
         name: name,
         emblemUrl: emblemUrl,
         code: path,

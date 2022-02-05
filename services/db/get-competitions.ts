@@ -1,4 +1,5 @@
-import { pool } from ".";
+import { getCurrentSeason, pool } from ".";
+import { DBCompetition } from "../types/data";
 
 export async function getCompetition(options: { id?: number, name?: string, code?: string }) {
     let column = "";
@@ -23,6 +24,16 @@ export async function getCompetition(options: { id?: number, name?: string, code
     if (result.rowCount === 0) {
         return null;
     } else {
-        return result.rows[0];
+        let competition = result.rows[0] as DBCompetition;
+        competition.data.id = competition.id;
+
+        let cs = await getCurrentSeason(competition.data);
+        if (cs) {
+            competition.data.currentSeason = cs;
+        }
+
+        competition.data.teams = competition.teams;
+
+        return competition;
     }
 }

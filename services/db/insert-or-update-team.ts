@@ -4,7 +4,7 @@ import { Team } from "../types/data";
 export async function insertOrUpdateTeam(team: Team) {
     let checkResult: any;
 
-    if (team.id === -1) {
+    if (team.id === "-1") {
         let checkQuery = {
             text: `SELECT "id", "lastUpdated" FROM teams WHERE "name" = $1`,
             values: [team.name]
@@ -49,7 +49,7 @@ export async function insertOrUpdateTeam(team: Team) {
             console.log("Updated team: " + checkResult.rows[0].id);
         }
 
-        return checkResult.rows[0].id as number;
+        return checkResult.rows[0].id as string;
     } else {
         // Insert the team
         let insertQuery = {
@@ -66,6 +66,6 @@ export async function insertOrUpdateTeam(team: Team) {
 
         console.log("Inserted team: " + insertResult.rows[0].id);
 
-        return insertResult.rows[0].id as number;
+        return insertResult.rows[0].id as string;
     }
 }

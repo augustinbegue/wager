@@ -4,16 +4,16 @@ import { Competition } from "../types/data";
 export async function insertOrUpdateCompetition(competition: Competition) {
     let checkResult: any;
 
-    if (competition.id === -1) {
+    if (competition.id === "-1") {
         let checkQuery = {
-            text: `SELECT "id", "lastUpdated" FROM competitions WHERE "name" = $1`,
+            text: `SELECT "id", "lastUpdated" FROM competitions WHERE "name" = $1;`,
             values: [competition.name]
         }
 
         checkResult = await pool.query(checkQuery);
     } else {
         let checkQuery = {
-            text: `SELECT "id", "lastUpdated" FROM competitions WHERE "id" = $1`,
+            text: `SELECT "id", "lastUpdated" FROM competitions WHERE "id" = $1;`,
             values: [competition.id]
         }
 
@@ -27,27 +27,49 @@ export async function insertOrUpdateCompetition(competition: Competition) {
         let update = new Date(checkResult.rows[0].lastUpdated).getTime() != lastUpdated.getTime();
 
         if (update) {
-            let updateQuery = {
-                text: `UPDATE competitions SET
+            if (competition.teams.length > 0) {
+                let updateQuery = {
+                    text: `UPDATE competitions SET
+                        "emblemUrl" = $1,
+                        "lastUpdated" = $2,
+                        "data" = $3,
+                        "teams" = $4
+                        WHERE "id" = $5`,
+
+                    values: [
+                        competition.emblemUrl,
+                        new Date(competition.lastUpdated),
+                        competition,
+                        competition.teams,
+                        checkResult.rows[0].id
+                    ]
+                }
+
+                await pool.query(updateQuery);
+            } else {
+                let updateQuery = {
+                    text: `UPDATE competitions SET
                         "emblemUrl" = $1,
                         "lastUpdated" = $2,
                         "data" = $3
                         WHERE "id" = $4`,
 
-                values: [
-                    competition.emblemUrl,
-                    new Date(competition.lastUpdated),
-                    competition,
-                    checkResult.rows[0].id
-                ]
+                    values: [
+                        competition.emblemUrl,
+                        new Date(competition.lastUpdated),
+                        competition,
+                        checkResult.rows[0].id
+                    ]
+                }
+
+                await pool.query(updateQuery);
             }
 
-            await pool.query(updateQuery);
 
             console.log("Updated competition: " + checkResult.rows[0].id);
         }
 
-        return checkResult.rows[0].id as number;
+        return checkResult.rows[0].id as string;
     } else {
         // Insert the competition
         let insertQuery = {
@@ -64,6 +86,6 @@ export async function insertOrUpdateCompetition(competition: Competition) {
 
         console.log("Inserted competition: " + insertResult.rows[0].id);
 
-        return insertResult.rows[0].id as number;
+        return insertResult.rows[0].id as string;
     }
 }

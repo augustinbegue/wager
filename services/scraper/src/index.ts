@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { ScraperConfig } from '../../types/configs';
 import { Competition, Match, Team } from '../../types/data';
-import { getCompetition, getTeam, insertOrUpdateCompetition, insertOrUpdateMatch, insertOrUpdateTeam } from '../../db';
+import { getCompetition, getTeam, insertOrUpdateCompetition, insertOrUpdateMatch, insertOrUpdateSeason, insertOrUpdateTeam, updateCurrentMatchday } from '../../db';
 
 // Load dotenv before importing anything else
 dotenv.config();
@@ -16,6 +16,8 @@ import { getTeamsByCompetition } from '../../db/get-teams';
     const config = JSON.parse(readFileSync(__dirname + "/config.json", 'utf8')) as ScraperConfig;
     const baseUrl = process.env.SCRAPING_URL;
     const headless = !config.debug;
+
+    let startTime = new Date();
 
     if (!baseUrl) {
         throw new Error("Missing environment variable 'SCRAPING_URL'");
@@ -43,11 +45,12 @@ import { getTeamsByCompetition } from '../../db/get-teams';
         await Promise.all(pages.map((page) => page.close()));
         await browser.close();
     }
+
+    console.log("Finished in " + (new Date().getTime() - startTime.getTime()) + "ms");
 })();
 
 async function processPage(browser: puppeteer.Browser, config: ScraperConfig, baseUrl: string, path: string) {
     const page = await browser.newPage();
-    await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
 
     let competition: Competition;
     let teams: Team[];
@@ -55,9 +58,12 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
 
     // Scrape competition info
     if (config.updateCompetitions) {
-        competition = await scrapeCompetitionInfo(page, path);
+        competition = await scrapeCompetitionInfo(page, baseUrl, path);
 
         competition.id = await insertOrUpdateCompetition(competition);
+
+        competition.currentSeason.competition = competition.id;
+        competition.currentSeason.id = await insertOrUpdateSeason(competition.currentSeason);
     } else {
         let res = await getCompetition({ code: path });
 
@@ -68,6 +74,9 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
         competition = res?.data;
         competition.id = res.id;
     }
+
+    // Update season and matchday
+    competition.currentSeason.currentMatchday = await updateCurrentMatchday(competition.currentSeason);
 
     // Scrape teams in the competition
     if (config.updateTeams) {
@@ -91,6 +100,11 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
         }
     }
 
+    // Scrape Live Matches
+    let liveScrapedMatches = await scrapeLive(config, page, baseUrl, path);
+    matches = [...matches, ...parseScrapedMatches(liveScrapedMatches, competition, teams, 'IN_PLAY')];
+
+    // Scrape Finished Matches
     if (config.updateResults) {
         let scrapedMatches = await scrapeResults(config, page, baseUrl, path);
         competition.currentSeason.currentMatchday = scrapedMatches.reduce((max, match) => { return Math.max(max, match.currentMatchday); }, 0);
@@ -98,14 +112,12 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
         matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams)];
     }
 
+    // Scrape Scheduled Matches
     if (config.updateFixtures) {
         let scrapedMatches = await scrapeFixtures(config, page, baseUrl, path);
 
         matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'SCHEDULED')];
     }
-
-    let liveScrapedMatches = await scrapeLive(config, page, baseUrl, path);
-    matches = [...matches, ...parseScrapedMatches(liveScrapedMatches, competition, teams, 'IN_PLAY')];
 
     for (let i = 0; i < matches.length; i++) {
         const match = matches[i];

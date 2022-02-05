@@ -23,7 +23,6 @@ jobs:
     - uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
-    - name: Download Packages
     - run: flutter pub get
     - run: flutter build ios --release --no-codesign
     

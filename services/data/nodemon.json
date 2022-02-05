@@ -8,7 +8,8 @@
     ],
     "watch": [
         "src/",
-        ".env"
+        ".env",
+        "../db"
     ],
     "execMap": {
         "ts": "node -r ts-node/register"

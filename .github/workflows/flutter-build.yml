@@ -2,6 +2,8 @@ name: Flutter Build
 
 on:
     push:
+        paths:
+            - "app/**"
         branches: [main]
     pull_request:
         branches: [main]

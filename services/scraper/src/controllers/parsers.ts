@@ -2,15 +2,17 @@ import moment from "moment";
 import { Competition, Match, duration, winner, Team, status } from "../../../types/data";
 import { ScrapedMatch, ScrapedTeam } from "../../../types/scraper";
 
+const scoreStatuses: status[] = ['LIVE', 'IN_PLAY', 'FINISHED', 'PAUSED'];
+
 export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: Competition, teams: Team[], status: status = 'FINISHED'): Match[] {
     return scrapedMatches.map((scrapedMatch) => {
         let fullTime = {
-            homeTeam: parseInt(scrapedMatch.homeScoreFullStr),
-            awayTeam: parseInt(scrapedMatch.awayScoreFullStr),
+            homeTeam: scrapedMatch.homeScoreFullStr ? parseInt(scrapedMatch.homeScoreFullStr) : null,
+            awayTeam: scrapedMatch.awayScoreFullStr ? parseInt(scrapedMatch.awayScoreFullStr) : null,
         }
         let halfTime = {
-            homeTeam: parseInt(scrapedMatch.homeScoreHalfStr),
-            awayTeam: parseInt(scrapedMatch.awayScoreHalfStr),
+            homeTeam: scrapedMatch.homeScoreHalfStr ? parseInt(scrapedMatch.homeScoreHalfStr) : null,
+            awayTeam: scrapedMatch.awayScoreHalfStr ? parseInt(scrapedMatch.awayScoreHalfStr) : null,
         }
         let duration: duration = 'REGULAR';
 
@@ -27,8 +29,11 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
             date.setSeconds(0, 0);
         } else if (scrapedMatch.timeStr) {
             let [day, month] = scrapedMatch.timeStr.split(" ")[0].split(".");
+
+            let year = month > '12' ? moment(competition.currentSeason.startDate).year() : moment(competition.currentSeason.endDate).year();
+
             date.setFullYear(
-                moment(competition.currentSeason.startDate).year(),
+                year,
                 parseInt(month) - 1,
                 parseInt(day)
             );
@@ -36,7 +41,9 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
             date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
 
-        let winner: winner = fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM';
+        let winner: winner = fullTime.homeTeam && fullTime.awayTeam ?
+            fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM'
+            : null;
 
         return {
             id: -1,

@@ -4,7 +4,7 @@ export type venue = 'HOME' | 'AWAY';
 
 export type standingType = 'TOTAL' | 'HOME' | 'AWAY';
 
-export type winner = 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW';
+export type winner = 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null;
 
 export type duration = 'REGULAR' | 'EXTRA_TIME' | 'PENALTIES';
 

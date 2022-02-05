@@ -3,10 +3,10 @@ export interface ScrapedMatch {
     elapsedMinutes?: string;
     homeTeamName: string;
     awayTeamName: string;
-    homeScoreFullStr: string;
-    awayScoreFullStr: string;
-    homeScoreHalfStr: string;
-    awayScoreHalfStr: string;
+    homeScoreFullStr?: string;
+    awayScoreFullStr?: string;
+    homeScoreHalfStr?: string;
+    awayScoreHalfStr?: string;
     currentMatchday: number;
 }
 

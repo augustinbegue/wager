@@ -9,7 +9,7 @@ dotenv.config();
 import { readFileSync } from 'fs';
 import puppeteer from 'puppeteer';
 import { parseScrapedMatches, parseScrapedTeams } from './controllers/parsers';
-import { scrapeCompetitionInfo, scrapeLive, scrapeResults, scrapeTeams } from './controllers/scrapers';
+import { scrapeCompetitionInfo, scrapeFixtures, scrapeLive, scrapeResults, scrapeTeams } from './controllers/scrapers';
 import { getTeamsByCompetition } from '../../db/get-teams';
 
 (async function () {
@@ -96,6 +96,12 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
         competition.currentSeason.currentMatchday = scrapedMatches.reduce((max, match) => { return Math.max(max, match.currentMatchday); }, 0);
 
         matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams)];
+    }
+
+    if (config.updateFixtures) {
+        let scrapedMatches = await scrapeFixtures(config, page, baseUrl, path);
+
+        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'SCHEDULED')];
     }
 
     let liveScrapedMatches = await scrapeLive(config, page, baseUrl, path);

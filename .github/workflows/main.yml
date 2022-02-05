@@ -14,7 +14,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-ios:
+    name: Flutter Build IOS
     runs-on: macos-latest
     steps:
     - working-directory: ./app
@@ -24,10 +25,33 @@ jobs:
         channel: 'stable'
     - name: Download Packages
     - run: flutter pub get
-    - name: IOS Build
     - run: flutter build ios --release --no-codesign
-    - name: Android Build
+    
+  build-android:
+    name: Flutter Build Android
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '2.5.3'
+    - run: flutter pub get
+    - run: flutter test
     - run: flutter build apk
     - run: flutter build appbundle
-    - name: Web Build
+    
+  build-web:
+    name: Flutter Build Web
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '2.5.3'
+    - run: flutter pub get
+    - run: flutter test
     - run: flutter build web

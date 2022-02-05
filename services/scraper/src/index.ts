@@ -1,14 +1,15 @@
 import dotenv from 'dotenv';
 import { ScraperConfig } from '../../types/configs';
-import { Competition, duration, Match, winner } from '../../types/data';
+import { Competition, Match, Team } from '../../types/data';
+import { insertOrUpdateCompetition, insertOrUpdateTeam } from '../../db';
 
 // Load dotenv before importing anything else
 dotenv.config();
 
 import { readFileSync } from 'fs';
 import puppeteer from 'puppeteer';
-import { scrapedMatchesToMatches } from './controllers/parsers';
-import { scrapeCompetitionInfo, scrapeResults } from './controllers/scrapers';
+import { parseScrapedMatches, parseScrapedTeams } from './controllers/parsers';
+import { scrapeCompetitionInfo, scrapeResults, scrapeTeams } from './controllers/scrapers';
 
 (async function () {
     const config = JSON.parse(readFileSync(__dirname + "/config.json", 'utf8')) as ScraperConfig;
@@ -22,6 +23,10 @@ import { scrapeCompetitionInfo, scrapeResults } from './controllers/scrapers';
     const browser = await puppeteer.launch({
         headless: headless,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        defaultViewport: {
+            width: 1920,
+            height: 1080
+        }
     });
 
     try {
@@ -44,15 +49,35 @@ async function processPage(browser: puppeteer.Browser, config: ScraperConfig, ba
     await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
 
     let competition: Competition;
+    let teams: Team[];
     let matches: Match[];
 
-    if (true) {
+    // Scrape competition info
+    if (config.updateCompetitions || true) {
         competition = await scrapeCompetitionInfo(page, path);
+
+        competition.id = await insertOrUpdateCompetition(competition);
+    } /* else {
+        // TODO: Get competition from db
+    } */
+
+    // Scrape teams in the competition
+    if (config.updateTeams) {
+        let scrapedTeams = await scrapeTeams(config, page, baseUrl, path);
+        teams = parseScrapedTeams(scrapedTeams);
+
+        for (let team of teams) {
+            team.id = await insertOrUpdateTeam(team);
+        }
+    } else {
+        // TODO: Get teams from db
     }
 
-    if (true) {
-        let scrapedMatches = await scrapeResults(config, page, path);
-        matches = scrapedMatchesToMatches(scrapedMatches, competition);
+    if (config.updateResults) {
+        let scrapedMatches = await scrapeResults(config, page, baseUrl, path);
+        matches = parseScrapedMatches(scrapedMatches, competition);
+    } else {
+        // TODO: Get matches from db
     }
 
     await page.close();

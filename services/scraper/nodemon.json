@@ -9,7 +9,7 @@
     "watch": [
         "src/",
         ".env",
-        "config.json"
+        "../db"
     ],
     "execMap": {
         "ts": "node -r ts-node/register"

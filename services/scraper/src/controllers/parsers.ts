@@ -1,8 +1,8 @@
 import moment from "moment";
-import { Competition, Match, duration, winner } from "../../../types/data";
-import { ScrapedMatch } from "../../../types/scraper";
+import { Competition, Match, duration, winner, Team } from "../../../types/data";
+import { ScrapedMatch, ScrapedTeam } from "../../../types/scraper";
 
-export function scrapedMatchesToMatches(scrapedMatches: ScrapedMatch[], competition: Competition): Match[] {
+export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: Competition): Match[] {
     return scrapedMatches.map((scrapedMatch) => {
         let fullTime = {
             homeTeam: parseInt(scrapedMatch.homeScoreFullStr),
@@ -62,5 +62,19 @@ export function scrapedMatchesToMatches(scrapedMatches: ScrapedMatch[], competit
                 },
             },
         };
+    });
+}
+
+export function parseScrapedTeams(scrapedTeams: ScrapedTeam[]): Team[] {
+    return scrapedTeams.map((scrapedTeam) => {
+        return {
+            id: -1,
+            name: scrapedTeam.name,
+            shortName: scrapedTeam.name,
+            tla: "",
+            crestUrl: scrapedTeam.crestUrl,
+            clubColors: "",
+            lastUpdated: new Date().toUTCString(),
+        }
     });
 }

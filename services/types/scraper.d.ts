@@ -8,3 +8,8 @@ export interface ScrapedMatch {
     awayScoreHalfStr: string;
     currentMatchday: number;
 }
+
+export interface ScrapedTeam {
+    name: string;
+    crestUrl: string;
+}

@@ -2,12 +2,26 @@ import { pool } from ".";
 import { Competition } from "../types/data";
 
 export async function insertOrUpdateCompetition(competition: Competition) {
-    let checkQuery = {
-        text: `SELECT * FROM competitions WHERE "id" = $1`,
-        values: [competition.id]
+    let checkResult: any;
+
+    if (competition.id === -1) {
+        let checkQuery = {
+            text: `SELECT "id", "lastUpdated" FROM competitions WHERE "name" = $1`,
+            values: [competition.name]
+        }
+
+        checkResult = await pool.query(checkQuery);
+    } else {
+        let checkQuery = {
+            text: `SELECT "id", "lastUpdated" FROM competitions WHERE "id" = $1`,
+            values: [competition.id]
+        }
+
+        console.log(checkQuery);
+
+        checkResult = await pool.query(checkQuery);
     }
 
-    let checkResult = await pool.query(checkQuery);
     let lastUpdated = new Date(competition.lastUpdated);
 
     if (checkResult.rowCount != 0) {
@@ -18,28 +32,29 @@ export async function insertOrUpdateCompetition(competition: Competition) {
             let updateQuery = {
                 text: `UPDATE competitions SET
                         "emblemUrl" = $1,
-                        "lastUpdated" = $1,
-                        "data" = $2,
-                        WHERE "id" = $3`,
+                        "lastUpdated" = $2,
+                        "data" = $3
+                        WHERE "id" = $4`,
 
                 values: [
                     competition.emblemUrl,
                     new Date(competition.lastUpdated),
                     competition,
-                    competition.id
+                    checkResult.rows[0].id
                 ]
             }
 
             await pool.query(updateQuery);
 
-            console.log("Updated competition: " + competition.id);
+            console.log("Updated competition: " + checkResult.rows[0].id);
         }
+
+        return checkResult.rows[0].id as number;
     } else {
         // Insert the competition
         let insertQuery = {
-            text: `INSERT INTO competitions("id", "name", "emblemUrl", "lastUpdated", "data") VALUES ($1, $2, $3, $4, $5)`,
+            text: `INSERT INTO competitions("name", "emblemUrl", "lastUpdated", "data") VALUES ($1, $2, $3, $4) RETURNING "id"`,
             values: [
-                competition.id,
                 competition.name,
                 competition.emblemUrl,
                 new Date(competition.lastUpdated),
@@ -47,8 +62,10 @@ export async function insertOrUpdateCompetition(competition: Competition) {
             ]
         }
 
-        await pool.query(insertQuery);
+        let insertResult = await pool.query(insertQuery);
 
-        console.log("Inserted competition: " + competition.id);
+        console.log("Inserted competition: " + insertResult.rows[0].id);
+
+        return insertResult.rows[0].id as number;
     }
 }

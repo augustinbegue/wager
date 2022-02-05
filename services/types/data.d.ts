@@ -114,3 +114,14 @@ export interface CompetitionsResponse {
     filters: Filters;
     competitions: Competition[];
 }
+
+export interface Team {
+    id: number;
+    area?: Area;
+    name: string;
+    shortName: string;
+    tla: string;
+    crestUrl: string;
+    clubColors: string;
+    lastUpdated: string;
+}

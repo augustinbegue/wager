@@ -9,4 +9,9 @@ export interface ScraperConfig {
     };
     // debug mode
     debug: boolean;
+    // update modes
+    updateTeams: boolean;
+    updateFixtures: boolean;
+    updateResults: boolean;
+    updateCompetitions: boolean;
 }

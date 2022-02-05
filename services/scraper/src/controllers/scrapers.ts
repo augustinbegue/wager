@@ -1,30 +1,58 @@
 import { ScraperConfig } from '../../../types/configs';
 import { Competition, Season } from '../../../types/data';
-import { ScrapedMatch } from '../../../types/scraper';
+import { ScrapedMatch, ScrapedTeam } from '../../../types/scraper';
 import puppeteer from 'puppeteer';
-import { closeBanners } from './utils';
+import { closeBanners, loadFullTable } from './utils';
 
-export async function scrapeResults(config: ScraperConfig, page: puppeteer.Page, path: string) {
-    await page.goto(page.url() + config.staticPaths.results, { waitUntil: 'networkidle2' });
+export async function scrapeTeams(config: ScraperConfig, page: puppeteer.Page, baseUrl: string, path: string) {
+    await page.goto(baseUrl + path + config.staticPaths.standings, { waitUntil: 'networkidle2' });
 
     await closeBanners(page);
 
-    // Load the whole table
-    try {
-        let anchor = await page.$("#live-table > div.event.event--results > div > div > a");
-        while (anchor) {
-            await anchor.click();
+    let scrapedTeams: ScrapedTeam[] = await page.evaluate(() => {
+        let container = document.querySelector("#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body") as HTMLDivElement;
 
-            await Promise.all([
-                page.waitForNavigation({ waitUntil: 'networkidle0' }),
-                page.evaluate(() => history.pushState(null, "", null)),
-            ]);
+        let promises = [];
+        for (let i = 0; i < container.childNodes.length; i++) {
+            const element = container.childNodes[i] as HTMLDivElement;
 
-            anchor = await page.$("#live-table > div.event.event--results > div > div > a");
+            let teamEl = element.querySelector('.table__cell--participant') as HTMLDivElement;
+
+            let teamName = (teamEl.querySelector('.tableCellParticipant__name') as HTMLDivElement).innerText;
+            let teamCrestUrl = (teamEl.querySelector('.tableCellParticipant__image') as HTMLImageElement).src;
+
+            promises.push(new Promise<ScrapedTeam>((resolve) => {
+                fetch(teamCrestUrl).then((response) => {
+                    response.blob().then((blob) => {
+
+                        let fr = new FileReader();
+                        fr.onload = () => {
+                            let data = fr.result as string;
+
+                            resolve({
+                                name: teamName,
+                                crestUrl: data,
+                            });
+                        };
+
+                        fr.readAsDataURL(blob);
+                    });
+                });
+            }));
         }
-    } catch (error) {
-        console.log(error);
-    }
+
+        return Promise.all(promises);
+    });
+
+    return scrapedTeams;
+}
+
+export async function scrapeResults(config: ScraperConfig, page: puppeteer.Page, baseUrl: string, path: string) {
+    await page.goto(baseUrl + path + config.staticPaths.results, { waitUntil: 'networkidle2' });
+
+    await closeBanners(page);
+
+    await loadFullTable(page);
 
     let scrapedMatches = await page.evaluate(() => {
         let container = document.querySelector("#live-table > div.event.event--results > div > div") as HTMLDivElement;
@@ -103,8 +131,8 @@ export async function scrapeCompetitionInfo(page: puppeteer.Page, path: string) 
         let yearContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__info") as HTMLDivElement;
 
         let season: Season = {
-            id: 1,
-            currentMatchday: 1,
+            id: -1,
+            currentMatchday: -1,
             startDate: "",
             endDate: "",
             winner: null,
@@ -123,7 +151,7 @@ export async function scrapeCompetitionInfo(page: puppeteer.Page, path: string) 
     });
 
     let competition: Competition = {
-        id: 1,
+        id: -1,
         name: name,
         emblemUrl: emblemUrl,
         code: path,

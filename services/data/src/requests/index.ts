@@ -1,6 +1,6 @@
 import axios from 'axios';
 import moment from 'moment';
-import { CompetitionsResponse, MatchesResponse, plan } from '../../../types';
+import { CompetitionsResponse, MatchesResponse, plan } from '../../../types/data';
 
 if (!process.env.FOOTBALL_DATA_TOKEN)
     throw new Error('Environement variable FOOTBALL_DATA_TOKEN is not defined');

@@ -37,7 +37,7 @@ export interface Area {
 export interface CompetitionShort {
     id: number;
     name: string;
-    area: Area;
+    area?: Area;
 }
 
 export interface Season {
@@ -62,20 +62,20 @@ export interface Match {
         winner: winner;
         duration: duration;
         fullTime: {
-            homeTeam: number;
-            awayTeam: number;
+            homeTeam: number | null;
+            awayTeam: number | null;
         };
         halfTime: {
-            homeTeam: number;
-            awayTeam: number;
+            homeTeam: number | null;
+            awayTeam: number | null;
         };
         extraTime: {
-            homeTeam: number;
-            awayTeam: number;
+            homeTeam: number | null;
+            awayTeam: number | null;
         };
         penalties: {
-            homeTeam: number;
-            awayTeam: number;
+            homeTeam: number | null;
+            awayTeam: number | null;
         };
     };
     homeTeam: {
@@ -86,7 +86,7 @@ export interface Match {
         id: number;
         name: string;
     };
-    referees: {
+    referees?: {
         id: number;
         name: string;
     }[];
@@ -100,11 +100,11 @@ export interface MatchesResponse {
 
 export interface Competition {
     id: number;
-    area: Area;
+    area?: Area;
     name: string;
     code: string;
     emblemUrl: string;
-    plan: plan;
+    plan?: plan;
     currentSeason: Season;
     numberOfAvailableSeasons: number;
     lastUpdated: string;

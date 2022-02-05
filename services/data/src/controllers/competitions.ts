@@ -1,4 +1,4 @@
-import { insertOrUpdateCompetition } from "../db";
+import { insertOrUpdateCompetition } from "../../../db";
 import { getTierCompetitions } from "../requests";
 
 export async function updateCompetitions() {

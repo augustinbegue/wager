@@ -1,4 +1,4 @@
-import { Match, status } from '../../../types';
+import { Match, status } from '../types/data';
 import { pool } from "./index";
 
 export async function insertOrUpdateMatch(match: Match): Promise<boolean> {

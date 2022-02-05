@@ -1,5 +1,5 @@
 import { getMatchesOfTheWeek } from '../requests';
-import { insertOrUpdateMatch } from '../db';
+import { insertOrUpdateMatch } from '../../../db';
 
 export async function checkForMatchesOfTheWeek() {
     let matchesResponse = await getMatchesOfTheWeek();
@@ -19,5 +19,7 @@ export async function checkForMatchesOfTheWeek() {
         }
     }
 
-    console.log(`${matchesResponse.matches.length} matches checked, ${updated} updated, ${errors} errors.`);
+    if (updated != 0 || errors != 0) {
+        console.log(`${matchesResponse.matches.length} matches checked, ${updated} updated, ${errors} errors.`);
+    }
 }

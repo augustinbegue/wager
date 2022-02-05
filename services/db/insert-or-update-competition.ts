@@ -1,5 +1,5 @@
 import { pool } from ".";
-import { Competition } from "../../../types";
+import { Competition } from "../types/data";
 
 export async function insertOrUpdateCompetition(competition: Competition) {
     let checkQuery = {

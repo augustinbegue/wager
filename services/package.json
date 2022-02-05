@@ -2,7 +2,8 @@
   "name": "wager-services",
   "workspaces": [
     "api",
-    "data"
+    "data",
+    "scraper"
   ],
   "scripts": {
     "clean": "tsc --build --clean",

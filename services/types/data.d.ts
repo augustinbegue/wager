@@ -93,6 +93,18 @@ export interface Match {
     }[];
 }
 
+export interface DBMatch {
+    id: string;
+    competitionId: string;
+    seasonId: string;
+    date: string;
+    status: status;
+    matchday: number;
+    homeTeamId: string;
+    awayTeamId: string;
+    data: Match;
+}
+
 export interface MatchesResponse {
     count: number;
     filters: Filters;
@@ -118,6 +130,7 @@ export interface DBCompetition {
     emblemUrl: string;
     lastUpdated: string;
     teams: string[];
+    code: string;
     data: Competition;
 }
 

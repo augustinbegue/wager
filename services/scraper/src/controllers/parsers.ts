@@ -44,7 +44,7 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
         }
 
         // Parse Winner
-        let winner: winner = fullTime.homeTeam && fullTime.awayTeam ?
+        let winner: winner = fullTime.homeTeam != null && fullTime.awayTeam != null ?
             fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM'
             : null;
 

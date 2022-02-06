@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:wager_app/widgets/matches/match_widget_small.dart';
 
 class MatchListSuggested extends StatefulWidget {
   const MatchListSuggested({Key? key}) : super(key: key);
@@ -29,11 +28,7 @@ class _MatchListSuggestedState extends State<MatchListSuggested> {
               ),
             ),
             Column(
-              children: [
-                MatchWidgetSmall(),
-                MatchWidgetSmall(),
-                MatchWidgetSmall()
-              ],
+              children: [],
             )
           ],
         ),

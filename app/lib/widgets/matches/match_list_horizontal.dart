@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:wager_app/widgets/matches/match_widget_small.dart';
 
 class MatchListHorizontal extends StatefulWidget {
   final String title;
@@ -19,7 +18,7 @@ class _MatchListHorizontalState extends State<MatchListHorizontal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              widget.title.length > 0
+              widget.title.isNotEmpty
                   ? SizedBox(
                       height: 32,
                       child: Text(
@@ -33,20 +32,7 @@ class _MatchListHorizontalState extends State<MatchListHorizontal> {
                 height: 154,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: const <Widget>[
-                    SizedBox(
-                      width: 350,
-                      child: MatchWidgetSmall(),
-                    ),
-                    SizedBox(
-                      width: 350,
-                      child: MatchWidgetSmall(),
-                    ),
-                    SizedBox(
-                      width: 350,
-                      child: MatchWidgetSmall(),
-                    )
-                  ],
+                  children: const <Widget>[],
                 ),
               ),
             ],

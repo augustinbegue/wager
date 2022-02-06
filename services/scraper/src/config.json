@@ -14,6 +14,6 @@
     "updateTeams": true,
     "updateFixtures": true,
     "updateResults": true,
-    "updateCompetitions": false,
+    "updateCompetitions": true,
     "debug": false
 }

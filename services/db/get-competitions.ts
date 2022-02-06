@@ -2,18 +2,18 @@ import { getCurrentSeason, pool } from ".";
 import { DBCompetition } from "../types/data";
 
 export async function getCompetition(options: { id?: string, name?: string, code?: string }) {
-    let column = "";
+    let comparison = "";
 
     if (options.id) {
-        column = "id";
+        comparison = "id = $1";
     } else if (options.name) {
-        column = "name";
+        comparison = "name = $1";
     } else if (options.code) {
-        column = `"data"->>'code'`;
+        comparison = "code = $1";
     }
 
     let query = {
-        text: `SELECT "id", "name", "emblemUrl", "lastUpdated", "data" FROM competitions WHERE ${column} = $1`,
+        text: `SELECT "id", "name", "emblemUrl", "lastUpdated", "data", "code" FROM competitions WHERE ${comparison}`,
         values: [
             options.id || options.name || options.code
         ]

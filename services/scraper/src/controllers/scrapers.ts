@@ -1,11 +1,14 @@
 import { ScraperConfig } from '../../../types/configs';
 import { Competition, DBSeason, Match, Team } from '../../../types/data';
 import { ScrapedMatch, ScrapedTeam } from '../../../types/scraper';
-import puppeteer from 'puppeteer';
-import { closeBanners, loadFullTable } from './utils';
+import { closeBanners, downloadImage, loadFullTable } from './utils';
 import { insertOrUpdateCompetition, insertOrUpdateSeason, insertOrUpdateTeam, insertOrUpdateMatch, getCompetition, updateCurrentMatchday } from '../../../db';
 import { parseScrapedMatches, parseScrapedTeams } from './parsers';
 import { getTeamsByCompetition } from '../../../db/get-teams';
+
+import axios from 'axios';
+import puppeteer from 'puppeteer';
+import fs from 'fs';
 
 export async function scrapePath(browser: puppeteer.Browser, config: ScraperConfig, baseUrl: string, path: string) {
     const page = await browser.newPage();
@@ -16,7 +19,7 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
 
     // Scrape competition info
     if (config.updateCompetitions) {
-        competition = await scrapeCompetitionInfo(page, baseUrl, path);
+        competition = await scrapeCompetition(page, baseUrl, path);
 
         competition.id = await insertOrUpdateCompetition(competition);
 
@@ -67,7 +70,7 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
         let scrapedMatches = await scrapeResults(config, page, baseUrl, path);
         competition.currentSeason.currentMatchday = scrapedMatches.reduce((max, match) => { return Math.max(max, match.currentMatchday); }, 0);
 
-        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams)];
+        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'FINISHED')];
     }
 
     // Scrape Scheduled Matches
@@ -197,6 +200,48 @@ export async function scrapeResults(config: ScraperConfig, page: puppeteer.Page,
     return scrapedMatches;
 }
 
+export async function scrapeMatch(match: Match, page: puppeteer.Page, baseUrl: string, path: string) {
+    await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
+
+    await closeBanners(page);
+
+    return await page.evaluate(() => {
+        let elements = document.querySelectorAll('.event__match');
+
+        let matchElement: HTMLDivElement | null = null;
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i] as HTMLDivElement;
+
+            let homeTeamName = (element.querySelector(".event__participant--home") as HTMLElement)?.innerText;
+            let awayTeamName = (element.querySelector(".event__participant--away") as HTMLElement)?.innerText;
+
+            if (homeTeamName === match.homeTeam.name && awayTeamName === match.awayTeam.name) {
+                matchElement = element;
+                break;
+            }
+        }
+
+        if (!matchElement) {
+            return;
+        }
+
+        let homeScoreFullStr = (matchElement.querySelector(".event__score--home") as HTMLElement)?.innerText;
+        let awayScoreFullStr = (matchElement.querySelector(".event__score--away") as HTMLElement)?.innerText;
+
+        let homeScoreHalfStr = (matchElement.querySelector(".event__part--home") as HTMLElement)?.innerText;
+        let awayScoreHalfStr = (matchElement.querySelector(".event__part--away") as HTMLElement)?.innerText;
+
+        return {
+            homeScoreFullStr,
+            awayScoreFullStr,
+            homeScoreHalfStr,
+            awayScoreHalfStr,
+            currentMatchday: -1,
+            elapsedMinutes: "90",
+        }
+    }) as ScrapedMatch | undefined
+}
+
 export async function scrapeTeams(config: ScraperConfig, page: puppeteer.Page, baseUrl: string, path: string) {
     await page.goto(baseUrl + path + config.staticPaths.standings, { waitUntil: 'networkidle2' });
 
@@ -205,69 +250,45 @@ export async function scrapeTeams(config: ScraperConfig, page: puppeteer.Page, b
     let scrapedTeams: ScrapedTeam[] = await page.evaluate(() => {
         let container = document.querySelector("#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body") as HTMLDivElement;
 
-        let promises = [];
+        let teams = [];
         for (let i = 0; i < container.childNodes.length; i++) {
             const element = container.childNodes[i] as HTMLDivElement;
 
             let teamEl = element.querySelector('.table__cell--participant') as HTMLDivElement;
 
             let teamName = (teamEl.querySelector('.tableCellParticipant__name') as HTMLDivElement).innerText;
-            let teamCrestUrl = (teamEl.querySelector('.tableCellParticipant__image') as HTMLImageElement).src;
+            let teamCrestUrl = ((teamEl.querySelector('.tableCellParticipant__image') as HTMLAnchorElement).childNodes[0] as HTMLImageElement).src;
 
-            promises.push(new Promise<ScrapedTeam>((resolve) => {
-                fetch(teamCrestUrl).then((response) => {
-                    response.blob().then((blob) => {
-
-                        let fr = new FileReader();
-                        fr.onload = () => {
-                            let data = fr.result as string;
-
-                            resolve({
-                                name: teamName,
-                                crestUrl: data,
-                            });
-                        };
-
-                        fr.readAsDataURL(blob);
-                    });
-                });
-            }));
+            teams.push({ name: teamName, crestUrl: teamCrestUrl });
         }
 
-        return Promise.all(promises);
+        return teams;
     });
+
+    for (let i = 0; i < scrapedTeams.length; i++) {
+        const team = scrapedTeams[i];
+
+        if (team.crestUrl) {
+            let staticAssetUrl = await downloadImage(team.crestUrl, 'teams/', team.name.replace(/\s/g, '').toLowerCase() + '.' + team.crestUrl.split('.').pop());
+            team.crestUrl = staticAssetUrl;
+        }
+    }
 
     return scrapedTeams;
 }
 
-export async function scrapeCompetitionInfo(page: puppeteer.Page, baseUrl: string, path: string) {
+export async function scrapeCompetition(page: puppeteer.Page, baseUrl: string, path: string) {
     await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
 
     const emblemUrl = (await page.evaluate(() => {
-        return new Promise((resolve, reject) => {
-            let crestContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__logo.heading__logo--1") as HTMLDivElement;
+        let crestContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__logo.heading__logo--1") as HTMLDivElement;
 
-            if (crestContainer) {
-                let crestUrl = crestContainer.style.backgroundImage.slice(4, -1).replace(/"/g, "");
-
-                fetch(crestUrl).then((response) => {
-                    response.blob().then((blob) => {
-
-                        let fr = new FileReader();
-                        fr.onload = () => {
-                            let data = fr.result as string;
-
-                            resolve(data);
-                        };
-
-                        fr.readAsDataURL(blob);
-                    });
-                });
-            } else {
-                resolve("");
-            }
-        });
-    })) as string;
+        if (crestContainer) {
+            return 'https://' + window.location.host + crestContainer.style.backgroundImage.slice(4, -1).replace(/"/g, "");
+        } else {
+            return "";
+        }
+    }));
 
     const name = await page.evaluate(() => {
         let nameContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__title > div.heading__name") as HTMLDivElement;
@@ -305,7 +326,7 @@ export async function scrapeCompetitionInfo(page: puppeteer.Page, baseUrl: strin
     let competition: Competition = {
         id: "-1",
         name: name,
-        emblemUrl: emblemUrl,
+        emblemUrl: await downloadImage(emblemUrl, 'competitions/', name.replace(/\s/g, '').toLowerCase() + '.png'),
         code: path,
         currentSeason: season,
         numberOfAvailableSeasons: 1,

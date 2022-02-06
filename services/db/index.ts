@@ -5,8 +5,8 @@ import { insertOrUpdateTeam } from './insert-or-update-team';
 import { insertOrUpdateSeason, updateCurrentMatchday } from './insert-or-update-season';
 import { getCurrentSeason } from './get-seasons';
 import { getCompetition } from './get-competitions';
-import { getTeam, getTeamsByCompetition } from './get-teams';
-import { getMatch } from './get-match';
+import { getTeamCrestUrl, getTeam, getTeamsByCompetition } from './get-teams';
+import { getMatch, getMatches } from './get-matches';
 
 export const pool = new Pool();
 
@@ -20,5 +20,7 @@ export {
     getCompetition,
     getTeamsByCompetition,
     getTeam,
+    getTeamCrestUrl,
     getMatch,
+    getMatches,
 }

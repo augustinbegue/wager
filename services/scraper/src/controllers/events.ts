@@ -1,6 +1,6 @@
 import { ScraperConfig } from "../../../types/configs";
 import puppeteer from 'puppeteer';
-import { scrapeLive, scrapePath } from "./scrapers";
+import { scrapeLive, scrapeMatch, scrapePath } from "./scrapers";
 import { Competition, Match } from "../../../types/data";
 import { ScrapedMatch } from "../../../types/scraper";
 import { getCompetition, updateCurrentMatchday, getTeamsByCompetition, insertOrUpdateMatch, getMatch } from "../../../db";
@@ -55,7 +55,7 @@ export async function update(config: ScraperConfig) {
     let next12HMatches = matches.filter((match) => {
         let date = new Date(match.utcDate).getTime();
 
-        return match.status === 'SCHEDULED' && date < cutoff;
+        return match.status === 'SCHEDULED' && date < cutoff || match.status === 'IN_PLAY';
     })
 
     console.log("Found " + next12HMatches.length + " matches in the next 12 hours:");
@@ -93,6 +93,9 @@ export async function matchStart(match: Match) {
 }
 
 export async function liveScrape() {
+    console.log('Live scraping started...');
+    let start = new Date().getTime();
+
     // Setup
     const baseUrl = process.env.SCRAPING_URL as string;
     const browser = await puppeteer.launch({
@@ -103,14 +106,14 @@ export async function liveScrape() {
 
     let matches: Match[] = [];
     for (let i = 0; i < liveCompetitions.length; i++) {
-        const path = liveCompetitions[i];
+        const id = liveCompetitions[i];
 
         try {
             // Get competition
             let competition: Competition;
-            let res = await getCompetition({ code: path });
+            let res = await getCompetition({ id: id });
             if (!res) {
-                throw new Error("Competition with code '" + path + "' not found.");
+                throw new Error("Competition with id '" + id + "' not found.");
             }
             competition = res?.data;
             competition.currentSeason.currentMatchday = await updateCurrentMatchday(competition.currentSeason);
@@ -122,16 +125,16 @@ export async function liveScrape() {
             }
 
             // Scrape live matches
-            let scrapedMatches = await scrapeLive(page, baseUrl, path);
+            let scrapedMatches = await scrapeLive(page, baseUrl, competition.code);
             matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'IN_PLAY')];
 
             // Update matches
             for (let i = 0; i < matches.length; i++) {
-                const match = matches[i];
-                match.id = await insertOrUpdateMatch(match);
+                console.log(`Updating match ${matches[i].id} (${matches[i].homeTeam.name} vs ${matches[i].awayTeam.name})`);
+                matches[i].id = await insertOrUpdateMatch(matches[i]);
             }
         } catch (error) {
-            console.error(`Error scraping live matches for competition with code '${path}':`);
+            console.error(`Error scraping live matches for competition with code '${id}':`);
             console.error(error);
         }
     }
@@ -152,7 +155,15 @@ export async function liveScrape() {
         let match = matches.find(match => match.id === obj.matchId);
 
         if (!match) {
-            matchEnd(obj);
+            match = await getMatch(obj.matchId);
+
+            if (match) {
+                let scrapedMatch = await scrapeMatch(match, page, baseUrl, obj.code);
+
+                if (scrapedMatch) {
+                    matchEnd(obj, scrapedMatch);
+                }
+            }
         }
     }
 
@@ -161,23 +172,30 @@ export async function liveScrape() {
     await Promise.all(pages.map((page) => page.close()));
     await browser.close();
 
+    console.log('Live scraping finished in ' + (new Date().getTime() - start) + 'ms');
+    console.log(liveCompetitions);
+
     setTimeout(liveScrape, 1000 * 30);
 }
 
-export async function matchEnd(obj: { matchId: string, code: string }) {
+export async function matchEnd(obj: { matchId: string, code: string }, scrapedMatch: ScrapedMatch) {
     console.log('Match ended: ' + obj.matchId);
 
-    let match = await getMatch(obj.matchId);
-    if (!match) {
-        console.error('Match with id ' + obj.matchId + ' not found.');
+
+    let competition = await getCompetition({ code: obj.code });
+    if (!competition) {
+        console.error('Competition with code ' + obj.code + ' not found.');
         return;
     }
 
-    let competition = await getCompetition({ name: match.competition.name });
-    if (!competition) {
-        console.error('Competition with name ' + match.competition.name + ' not found.');
+    let teams = await getTeamsByCompetition(competition.id);
+    if (teams.length === 0) {
+        console.error('No teams found for competition with id ' + competition.id + '.');
         return;
     }
+
+    let match = parseScrapedMatches([scrapedMatch], competition.data, teams, 'FINISHED')[0];
+    match.id = await insertOrUpdateMatch(match);
 
     liveMatches.splice(liveMatches.indexOf(obj), 1);
     startedMatches.splice(liveMatches.indexOf(obj), 1);

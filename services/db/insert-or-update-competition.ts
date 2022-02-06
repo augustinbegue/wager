@@ -33,14 +33,16 @@ export async function insertOrUpdateCompetition(competition: Competition) {
                         "emblemUrl" = $1,
                         "lastUpdated" = $2,
                         "data" = $3,
-                        "teams" = $4
-                        WHERE "id" = $5`,
+                        "teams" = $4,
+                        "code" = $5
+                        WHERE "id" = $6`,
 
                     values: [
                         competition.emblemUrl,
                         new Date(competition.lastUpdated),
                         competition,
                         competition.teams,
+                        competition.code,
                         checkResult.rows[0].id
                     ]
                 }
@@ -51,13 +53,15 @@ export async function insertOrUpdateCompetition(competition: Competition) {
                     text: `UPDATE competitions SET
                         "emblemUrl" = $1,
                         "lastUpdated" = $2,
-                        "data" = $3
-                        WHERE "id" = $4`,
+                        "data" = $3,
+                        "code" = $4
+                        WHERE "id" = $5`,
 
                     values: [
                         competition.emblemUrl,
                         new Date(competition.lastUpdated),
                         competition,
+                        competition.code,
                         checkResult.rows[0].id
                     ]
                 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:wager_app/providers/api.dart';
 
 class MatchWidgetSmall extends StatefulWidget {
-  const MatchWidgetSmall({Key? key}) : super(key: key);
+  final ApiMatchCondensed match;
+  const MatchWidgetSmall({Key? key, required this.match}) : super(key: key);
 
   @override
   _MatchWidgetSmallState createState() => _MatchWidgetSmallState();
@@ -33,16 +35,42 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const <Widget>[
-                          Text('Team 1'),
-                          Text('Team 2'),
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Row(children: <Widget>[
+                              SizedBox(
+                                height: 20,
+                                child: Image.network(Uri(
+                                  scheme: 'https',
+                                  host: Api.endpoint,
+                                  path: widget.match.homeTeam.crestUrl,
+                                ).toString()),
+                              ),
+                              Text(widget.match.homeTeam.name),
+                            ]),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Row(children: <Widget>[
+                              SizedBox(
+                                height: 20,
+                                child: Image.network(Uri(
+                                  scheme: 'https',
+                                  host: Api.endpoint,
+                                  path: widget.match.awayTeam.crestUrl,
+                                ).toString()),
+                              ),
+                              Text(widget.match.awayTeam.name),
+                            ]),
+                          ),
                         ],
                       ),
                     ),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Text('17:30'),
+                        Text(widget.match.date),
                         IconButton(
                             onPressed: () {
                               /* ... */

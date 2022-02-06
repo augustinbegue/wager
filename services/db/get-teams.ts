@@ -1,7 +1,7 @@
 import { pool } from ".";
 import { Team } from "../types/data";
 
-export async function getTeam(options: { id?: number, name?: string }) {
+export async function getTeam(options: { id?: string, name?: string }) {
     let column = "";
 
     if (options.id) {
@@ -13,7 +13,7 @@ export async function getTeam(options: { id?: number, name?: string }) {
     let query = {
         text: `SELECT "id", "name", "crestUrl", "lastUpdated", "data" FROM teams WHERE ${column} = $1`,
         values: [
-            options.id || options.name
+            options.name || parseInt(options.id as string)
         ]
     }
 
@@ -52,5 +52,22 @@ export async function getTeamsByCompetition(competitionId: string) {
         }
 
         return teams;
+    }
+}
+
+export async function getTeamCrestUrl(teamId: number) {
+    let query = {
+        text: `SELECT "crestUrl" FROM teams WHERE "id" = cast($1 as bigint)`,
+        values: [
+            teamId
+        ]
+    }
+
+    let result = await pool.query(query);
+
+    if (result.rowCount === 0) {
+        return null;
+    } else {
+        return result.rows[0].crestUrl;
     }
 }

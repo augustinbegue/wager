@@ -26,6 +26,7 @@ export interface ApiMatchCondensed {
     competition: {
         id: string;
         name: string;
+        emblemUrl: string;
     };
     season: {
         id: string;

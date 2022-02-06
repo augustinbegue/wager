@@ -4,9 +4,9 @@ dotenv.config();
 import express from 'express';
 import path from 'path';
 import routers from './routes';
+import cors from 'cors';
 
 export const app = express();
-
 
 const getActualRequestDurationInMilliseconds = (start: any) => {
     const NS_PER_SEC = 1e9; //  convert to nanoseconds
@@ -41,8 +41,9 @@ function demoLogger(req: any, res: any, next: any) {
     next();
 };
 
-
+// Middlewaresnpm i --save-dev @types/corsnpm i --save-dev @types/cors
 app.use(demoLogger);
+app.use(cors());
 
 app.use('/matches', routers.matchRouter);
 

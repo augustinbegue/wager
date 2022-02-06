@@ -9,6 +9,7 @@ const router = express.Router();
  * Returns a list of the matches going from the previous day to 6 days after the current date.
  */
 router.get('/week', async (req, res) => {
+    // Controller
     let startDate = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
     let endDate = new Date(new Date().getTime() + (6 * 24 * 60 * 60 * 1000));
 
@@ -42,7 +43,8 @@ export async function getApiMatchCondensed(match: DBMatch): Promise<ApiMatchCond
         id: match.id,
         competition: {
             id: competition.id,
-            name: competition.name
+            name: competition.name,
+            emblemUrl: competition.emblemUrl
         },
         season: {
             id: match.seasonId

@@ -1,7 +1,7 @@
 import { getCurrentSeason, pool } from ".";
 import { DBCompetition } from "../types/data";
 
-export async function getCompetition(options: { id?: number, name?: string, code?: string }) {
+export async function getCompetition(options: { id?: string, name?: string, code?: string }) {
     let column = "";
 
     if (options.id) {

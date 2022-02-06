@@ -1,8 +1,91 @@
 import { ScraperConfig } from '../../../types/configs';
-import { Competition, DBSeason } from '../../../types/data';
+import { Competition, DBSeason, Match, Team } from '../../../types/data';
 import { ScrapedMatch, ScrapedTeam } from '../../../types/scraper';
 import puppeteer from 'puppeteer';
 import { closeBanners, loadFullTable } from './utils';
+import { insertOrUpdateCompetition, insertOrUpdateSeason, insertOrUpdateTeam, insertOrUpdateMatch, getCompetition, updateCurrentMatchday } from '../../../db';
+import { parseScrapedMatches, parseScrapedTeams } from './parsers';
+import { getTeamsByCompetition } from '../../../db/get-teams';
+
+export async function scrapePath(browser: puppeteer.Browser, config: ScraperConfig, baseUrl: string, path: string) {
+    const page = await browser.newPage();
+
+    let competition: Competition;
+    let teams: Team[];
+    let matches: Match[] = [];
+
+    // Scrape competition info
+    if (config.updateCompetitions) {
+        competition = await scrapeCompetitionInfo(page, baseUrl, path);
+
+        competition.id = await insertOrUpdateCompetition(competition);
+
+        competition.currentSeason.competition = competition.id;
+        competition.currentSeason.id = await insertOrUpdateSeason(competition.currentSeason);
+    } else {
+        let res = await getCompetition({ code: path });
+
+        if (!res) {
+            throw new Error("Competition with code '" + path + "' not found. You may need to enable config.updateCompetitions.");
+        }
+
+        competition = res?.data;
+        competition.id = res.id;
+    }
+
+    // Update season and matchday
+    competition.currentSeason.currentMatchday = await updateCurrentMatchday(competition.currentSeason);
+
+    // Scrape teams in the competition
+    if (config.updateTeams) {
+        let scrapedTeams = await scrapeTeams(config, page, baseUrl, path);
+        teams = parseScrapedTeams(scrapedTeams);
+
+        competition.teams = [];
+        for (let i = 0; i < teams.length; i++) {
+            const team = teams[i];
+            team.id = await insertOrUpdateTeam(team);
+            competition.teams.push(team.id);
+        }
+
+        competition.lastUpdated = new Date().toUTCString();
+        await insertOrUpdateCompetition(competition);
+    } else {
+        teams = await getTeamsByCompetition(competition.id);
+
+        if (teams.length === 0) {
+            throw new Error("No teams found for competition with id '" + competition.id + "'. You may need to enable config.updateTeams.");
+        }
+    }
+
+    // Scrape Live Matches
+    let liveScrapedMatches = await scrapeLive(page, baseUrl, path);
+    matches = [...matches, ...parseScrapedMatches(liveScrapedMatches, competition, teams, 'IN_PLAY')];
+
+    // Scrape Finished Matches
+    if (config.updateResults) {
+        let scrapedMatches = await scrapeResults(config, page, baseUrl, path);
+        competition.currentSeason.currentMatchday = scrapedMatches.reduce((max, match) => { return Math.max(max, match.currentMatchday); }, 0);
+
+        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams)];
+    }
+
+    // Scrape Scheduled Matches
+    if (config.updateFixtures) {
+        let scrapedMatches = await scrapeFixtures(config, page, baseUrl, path);
+
+        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'SCHEDULED')];
+    }
+
+    for (let i = 0; i < matches.length; i++) {
+        const match = matches[i];
+        match.id = await insertOrUpdateMatch(match);
+    }
+
+    await page.close();
+
+    return matches;
+}
 
 export async function scrapeFixtures(config: ScraperConfig, page: puppeteer.Page, baseUrl: string, path: string) {
     await page.goto(baseUrl + path + config.staticPaths.fixtures, { waitUntil: 'networkidle2' });
@@ -41,7 +124,7 @@ export async function scrapeFixtures(config: ScraperConfig, page: puppeteer.Page
     return scrapedMatches;
 }
 
-export async function scrapeLive(config: ScraperConfig, page: puppeteer.Page, baseUrl: string, path: string) {
+export async function scrapeLive(page: puppeteer.Page, baseUrl: string, path: string) {
     await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
 
     let scrapedMatches = await page.evaluate(() => {
@@ -231,5 +314,3 @@ export async function scrapeCompetitionInfo(page: puppeteer.Page, baseUrl: strin
     };
     return competition;
 }
-
-

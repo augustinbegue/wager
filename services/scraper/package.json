@@ -1,9 +1,10 @@
 {
     "name": "wager-scraper",
     "scripts": {
-        "build": "tsc --build",
+        "build": "tsc --build && cp ./src/config.json ./dist/config.json && cp .env ./dist/.env",
         "dev": "nodemon --config nodemon.json src/index.ts",
-        "dev:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts"
+        "dev:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts",
+        "start": "cd dist && pm2 start index.js --name wager-scraper"
     },
     "dependencies": {
         "axios": "^0.25.0",

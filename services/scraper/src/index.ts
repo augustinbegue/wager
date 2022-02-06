@@ -1,130 +1,17 @@
 import dotenv from 'dotenv';
-import { ScraperConfig } from '../../types/configs';
-import { Competition, Match, Team } from '../../types/data';
-import { getCompetition, getTeam, insertOrUpdateCompetition, insertOrUpdateMatch, insertOrUpdateSeason, insertOrUpdateTeam, updateCurrentMatchday } from '../../db';
 
 // Load dotenv before importing anything else
 dotenv.config();
 
+import { update } from './controllers/events';
 import { readFileSync } from 'fs';
-import puppeteer from 'puppeteer';
-import { parseScrapedMatches, parseScrapedTeams } from './controllers/parsers';
-import { scrapeCompetitionInfo, scrapeFixtures, scrapeLive, scrapeResults, scrapeTeams } from './controllers/scrapers';
-import { getTeamsByCompetition } from '../../db/get-teams';
+import { ScraperConfig } from '../../types/configs';
 
-(async function () {
-    const config = JSON.parse(readFileSync(__dirname + "/config.json", 'utf8')) as ScraperConfig;
-    const baseUrl = process.env.SCRAPING_URL;
-    const headless = !config.debug;
+let config = JSON.parse(readFileSync(__dirname + '/config.json', 'utf8')) as ScraperConfig;
 
-    let startTime = new Date();
-
-    if (!baseUrl) {
-        throw new Error("Missing environment variable 'SCRAPING_URL'");
-    }
-
-    const browser = await puppeteer.launch({
-        headless: headless,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        defaultViewport: {
-            width: 1920,
-            height: 1080
-        }
-    });
-
-    try {
-        let promises = config.leagues.map((path) => {
-            return processPage(browser, config, baseUrl, path);
-        });
-
-        await Promise.all(promises);
-    } catch (error) {
-        console.error(error);
-    } finally {
-        const pages = await browser.pages();
-        await Promise.all(pages.map((page) => page.close()));
-        await browser.close();
-    }
-
-    console.log("Finished in " + (new Date().getTime() - startTime.getTime()) + "ms");
-})();
-
-async function processPage(browser: puppeteer.Browser, config: ScraperConfig, baseUrl: string, path: string) {
-    const page = await browser.newPage();
-
-    let competition: Competition;
-    let teams: Team[];
-    let matches: Match[] = [];
-
-    // Scrape competition info
-    if (config.updateCompetitions) {
-        competition = await scrapeCompetitionInfo(page, baseUrl, path);
-
-        competition.id = await insertOrUpdateCompetition(competition);
-
-        competition.currentSeason.competition = competition.id;
-        competition.currentSeason.id = await insertOrUpdateSeason(competition.currentSeason);
-    } else {
-        let res = await getCompetition({ code: path });
-
-        if (!res) {
-            throw new Error("Competition with code '" + path + "' not found. You may need to enable config.updateCompetitions.");
-        }
-
-        competition = res?.data;
-        competition.id = res.id;
-    }
-
-    // Update season and matchday
-    competition.currentSeason.currentMatchday = await updateCurrentMatchday(competition.currentSeason);
-
-    // Scrape teams in the competition
-    if (config.updateTeams) {
-        let scrapedTeams = await scrapeTeams(config, page, baseUrl, path);
-        teams = parseScrapedTeams(scrapedTeams);
-
-        competition.teams = [];
-        for (let i = 0; i < teams.length; i++) {
-            const team = teams[i];
-            team.id = await insertOrUpdateTeam(team);
-            competition.teams.push(team.id);
-        }
-
-        competition.lastUpdated = new Date().toUTCString();
-        await insertOrUpdateCompetition(competition);
-    } else {
-        teams = await getTeamsByCompetition(competition.id);
-
-        if (teams.length === 0) {
-            throw new Error("No teams found for competition with id '" + competition.id + "'. You may need to enable config.updateTeams.");
-        }
-    }
-
-    // Scrape Live Matches
-    let liveScrapedMatches = await scrapeLive(config, page, baseUrl, path);
-    matches = [...matches, ...parseScrapedMatches(liveScrapedMatches, competition, teams, 'IN_PLAY')];
-
-    // Scrape Finished Matches
-    if (config.updateResults) {
-        let scrapedMatches = await scrapeResults(config, page, baseUrl, path);
-        competition.currentSeason.currentMatchday = scrapedMatches.reduce((max, match) => { return Math.max(max, match.currentMatchday); }, 0);
-
-        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams)];
-    }
-
-    // Scrape Scheduled Matches
-    if (config.updateFixtures) {
-        let scrapedMatches = await scrapeFixtures(config, page, baseUrl, path);
-
-        matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'SCHEDULED')];
-    }
-
-    for (let i = 0; i < matches.length; i++) {
-        const match = matches[i];
-        match.id = await insertOrUpdateMatch(match);
-    }
-
-    await page.close();
-}
-
-
+// Scrape every 12h
+update(config);
+setInterval(() => {
+    let config = JSON.parse(readFileSync(__dirname + '/config.json', 'utf8')) as ScraperConfig;
+    update(config);
+}, 1000 * 60 * 60 * 12);

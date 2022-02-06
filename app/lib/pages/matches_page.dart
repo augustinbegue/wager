@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
-import 'package:wager_app/widgets/matches/match_widget_small.dart';
+import 'package:wager_app/widgets/matches/match_week_list.dart';
 
 class MatchesPage extends StatefulWidget {
   const MatchesPage({Key? key}) : super(key: key);
@@ -10,12 +10,12 @@ class MatchesPage extends StatefulWidget {
 }
 
 class _MatchesPageState extends State<MatchesPage> {
-  late Future<List<ApiMatchCondensed>> matches;
+  late Future<WeekMatchesList> matches;
 
   @override
   void initState() {
     super.initState();
-    matches = Api.fetchWeekMatches();
+    matches = Api.fetchWeekMatchesList();
   }
 
   @override
@@ -40,15 +40,12 @@ class _MatchesPageState extends State<MatchesPage> {
           body: TabBarView(
             children: <Widget>[
               Center(
-                child: FutureBuilder<List<ApiMatchCondensed>>(
+                child: FutureBuilder<WeekMatchesList>(
                   future: matches,
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      return ListView.builder(
-                        itemCount: snapshot.data?.length,
-                        itemBuilder: (context, index) {
-                          return MatchWidgetSmall(match: snapshot.data![index]);
-                        },
+                      return MatchWeekList(
+                        weekMatchesList: snapshot.data!,
                       );
                     } else if (snapshot.hasError) {
                       return Text("${snapshot.error}");

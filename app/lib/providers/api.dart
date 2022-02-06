@@ -23,7 +23,7 @@ class ApiScoreElement {
 
   factory ApiScoreElement.fromJson(Map<String, dynamic> json) {
     return ApiScoreElement(
-        homeTeam: json['homeTeam'], awayTeam: json['awayTeam']);
+        homeTeam: json['homeTeam'] ?? 0, awayTeam: json['awayTeam'] ?? 0);
   }
 }
 
@@ -42,8 +42,16 @@ class ApiScore {
       required this.penalties});
 
   factory ApiScore.fromJson(Map<String, dynamic> json) {
+    ApiWinner winner = ApiWinner.DRAW;
+    for (var element in ApiWinner.values) {
+      final String elementName = element.toString().split('.')[1];
+      if (elementName == json['winner']) {
+        winner = element;
+      }
+    }
+
     return ApiScore(
-        winner: ApiWinner.values[json['winner']],
+        winner: winner,
         fullTime: ApiScoreElement.fromJson(json['fullTime']),
         halfTime: ApiScoreElement.fromJson(json['halfTime']),
         extraTime: ApiScoreElement.fromJson(json['extraTime']),
@@ -54,11 +62,14 @@ class ApiScore {
 class ApiCompetitionCondensed {
   final String id;
   final String name;
+  final String emblemUrl;
 
-  const ApiCompetitionCondensed({required this.id, required this.name});
+  const ApiCompetitionCondensed(
+      {required this.id, required this.name, required this.emblemUrl});
 
   factory ApiCompetitionCondensed.fromJson(Map<String, dynamic> json) {
-    return ApiCompetitionCondensed(id: json['id'], name: json['name']);
+    return ApiCompetitionCondensed(
+        id: json['id'], name: json['name'], emblemUrl: json['emblemUrl']);
   }
 }
 
@@ -91,56 +102,134 @@ class ApiMatchCondensed {
   final ApiCompetitionCondensed competition;
   final ApiSeasonCondensed season;
   final int matchday;
-  final String date;
+  final DateTime date;
   final ApiTeamCondensed homeTeam;
   final ApiTeamCondensed awayTeam;
   final ApiStatus status;
+  final ApiScore score;
 
-  const ApiMatchCondensed(
-      {required this.id,
-      required this.competition,
-      required this.season,
-      required this.matchday,
-      required this.date,
-      required this.homeTeam,
-      required this.awayTeam,
-      required this.status});
+  const ApiMatchCondensed({
+    required this.id,
+    required this.competition,
+    required this.season,
+    required this.matchday,
+    required this.date,
+    required this.homeTeam,
+    required this.awayTeam,
+    required this.status,
+    required this.score,
+  });
 
   factory ApiMatchCondensed.fromJson(Map<String, dynamic> json) {
     ApiStatus status = ApiStatus.SCHEDULED;
-    ApiStatus.values.forEach((element) {
-      if (element.toString() == json['status']) {
+    for (var element in ApiStatus.values) {
+      final String elementName = element.toString().split('.')[1];
+      if (elementName == json['status']) {
         status = element;
       }
-    });
+    }
+
+    if (status != ApiStatus.SCHEDULED) print(status);
 
     return ApiMatchCondensed(
         id: json['id'],
         competition: ApiCompetitionCondensed.fromJson(json['competition']),
         season: ApiSeasonCondensed.fromJson(json['season']),
         matchday: json['matchday'],
-        date: json['date'],
+        date: DateTime.parse(json['date']),
         homeTeam: ApiTeamCondensed.fromJson(json['homeTeam']),
         awayTeam: ApiTeamCondensed.fromJson(json['awayTeam']),
+        score: ApiScore.fromJson(json['score']),
         status: status);
   }
 }
 
-class Api {
-  static const String endpoint = 'heavy-fox-60.loca.lt';
+class CompetitionsMatchesList {
+  final ApiCompetitionCondensed competition;
+  final List<ApiMatchCondensed> matches;
 
-  static Future<List<ApiMatchCondensed>> fetchWeekMatches() async {
+  const CompetitionsMatchesList(
+      {required this.matches, required this.competition});
+}
+
+class DayMatchesList {
+  final DateTime date;
+  final List<CompetitionsMatchesList> competitions;
+
+  const DayMatchesList({required this.date, required this.competitions});
+}
+
+class WeekMatchesList {
+  final List<DayMatchesList> days;
+
+  const WeekMatchesList({required this.days});
+}
+
+class Api {
+  static const String endpoint = 'new-mole-26.loca.lt';
+
+  static Future<WeekMatchesList> fetchWeekMatchesList() async {
     final response = await http.get(
         Uri(scheme: 'http', host: endpoint, path: '/matches/week', port: 3000));
 
     if (response.statusCode == 200) {
-      print(response.body);
-
       final json = jsonDecode(response.body) as List<dynamic>;
 
-      return json
+      List<ApiMatchCondensed> matches = json
           .map((e) => ApiMatchCondensed.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      matches.sort((a, b) => a.date.compareTo(b.date));
+
+      List<DateTime> dates = [];
+
+      for (var match in matches) {
+        DateTime matchDay =
+            DateTime(match.date.year, match.date.month, match.date.day);
+
+        if (!dates.contains(matchDay)) {
+          dates.add(matchDay);
+        }
+      }
+
+      List<ApiCompetitionCondensed> competitions = [];
+      for (var match in matches) {
+        if (!competitions.any((c) => c.name == match.competition.name)) {
+          competitions.add(match.competition);
+        }
+      }
+
+      List<DayMatchesList> days = [];
+
+      for (var date in dates) {
+        List<CompetitionsMatchesList> competitionsMatchesList = [];
+
+        for (var competition in competitions) {
+          List<ApiMatchCondensed> weekMatches = [];
+
+          for (var match in matches) {
+            DateTime matchDay =
+                DateTime(match.date.year, match.date.month, match.date.day);
+
+            if (matchDay == date &&
+                match.competition.name == competition.name) {
+              weekMatches.add(match);
+            }
+          }
+
+          if (weekMatches.isNotEmpty) {
+            competitionsMatchesList.add(CompetitionsMatchesList(
+                matches: weekMatches, competition: competition));
+          }
+        }
+
+        if (competitionsMatchesList.isNotEmpty) {
+          days.add(DayMatchesList(
+              date: date, competitions: competitionsMatchesList));
+        }
+      }
+
+      return WeekMatchesList(days: days);
     } else {
       throw Exception('Failed to load matches');
     }

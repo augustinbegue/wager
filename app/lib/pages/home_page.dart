@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     'Welcome Back Augustin,',
                     textAlign: TextAlign.left,
-                    style: whiteH1,
+                    style: white3XL,
                   ),
                 ),
                 MatchListHorizontal(

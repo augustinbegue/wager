@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 // Load dotenv before importing anything else
 dotenv.config();
 
-import { update } from './controllers/events';
+import { update } from "./events/update";
 import { readFileSync } from 'fs';
 import { ScraperConfig } from '../../types/configs';
 

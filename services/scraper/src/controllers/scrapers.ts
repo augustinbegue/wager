@@ -8,6 +8,50 @@ import { prisma, upsertMatch } from '../../../prisma';
 import { Competition, Match, Season, Team } from '@prisma/client';
 import { CompetitionIncludesSeason, MatchIncludesTeams } from '../../../types/db';
 
+export async function scrapeData(config: ScraperConfig) {
+    const baseUrl = process.env.SCRAPING_URL;
+    const headless = !config.debug;
+
+    let startTime = new Date();
+
+    if (!baseUrl) {
+        throw new Error("Missing environment variable 'SCRAPING_URL'");
+    }
+
+    const browser = await puppeteer.launch({
+        headless: headless,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        defaultViewport: {
+            width: 1920,
+            height: 1080
+        }
+    });
+
+    let matches: Match[] = [];
+    try {
+        let promises = config.leagues.map((path) => {
+            return scrapePath(browser, config, baseUrl, path);
+        });
+
+        let data = await Promise.all(promises);
+        for (let i = 0; i < data.length; i++) {
+            const m = data[i];
+            matches = [...matches, ...m];
+        }
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        const pages = await browser.pages();
+        await Promise.all(pages.map((page) => page.close()));
+        await browser.close();
+    }
+
+    console.log("Finished scraping in " + (new Date().getTime() - startTime.getTime()) + "ms");
+    return matches;
+}
+
+
 export async function scrapePath(browser: puppeteer.Browser, config: ScraperConfig, baseUrl: string, path: string) {
     const page = await browser.newPage();
 
@@ -18,8 +62,6 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
     // Scrape competition info
     if (config.updateCompetitions) {
         let scrapedCompetition = await scrapeCompetition(page, baseUrl, path);
-
-        console.log(scrapedCompetition);
 
         let res = await prisma.competition.upsert({
             where: {

@@ -32,16 +32,17 @@ enum winner {
 }
 
 model Competition {
-  id              Int      @id @default(autoincrement())
-  name            String   @unique
+  id              Int         @id @default(autoincrement())
+  name            String      @unique
   emblemUrl       String
-  code            String   @unique
+  code            String      @unique
   teamIds         Int[]
-  teams           Team[]   @relation(fields: [teamIds], references: [id])
-  currentSeasonId Int      @unique
-  currentSeason   Season   @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
-  pastSeasons     Season[] @relation("competition_pastSeasons")
+  teams           Team[]      @relation(fields: [teamIds], references: [id])
+  currentSeasonId Int         @unique
+  currentSeason   Season      @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
+  pastSeasons     Season[]    @relation("competition_pastSeasons")
   matches         Match[]
+  standings       Standings[]
 
   @@map("competitions")
 }
@@ -56,6 +57,7 @@ model Season {
   competition       Competition? @relation("competition_currentSeason")
   pastCompetitionId Int?
   pastCompetition   Competition? @relation("competition_pastSeasons", fields: [pastCompetitionId], references: [id])
+  standings         Standings[]
 
   @@map("seasons")
 }
@@ -87,6 +89,26 @@ model Team {
   matchesAsHomeTeam Match[]       @relation("matches_homeTeamIdToteams")
   competitions      Competition[]
   wonSeasons        Season[]
+  standingEntries   Standings[]
 
   @@map("teams")
+}
+
+model Standings {
+  id            Int         @id(map: "standings_pkey") @default(autoincrement())
+  teamId        Int
+  team          Team        @relation(fields: [teamId], references: [id])
+  playedGames   Int
+  won           Int
+  draw          Int
+  lost          Int
+  points        Int
+  goalsFor      Int
+  goalsAgainst  Int
+  competitionId Int
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  seasonId      Int
+  season        Season      @relation(fields: [seasonId], references: [id])
+
+  @@map("standings")
 }

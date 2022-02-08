@@ -1,5 +1,7 @@
-import { matchRouter } from "./match";
+import { matchesRouter } from "./matches";
+import { competitionsRouter } from "./competitions";
 
 export default {
-    matchRouter
+    matchesRouter,
+    competitionsRouter,
 }

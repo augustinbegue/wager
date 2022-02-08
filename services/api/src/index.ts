@@ -45,7 +45,8 @@ function demoLogger(req: any, res: any, next: any) {
 app.use(demoLogger);
 app.use(cors());
 
-app.use('/matches', routers.matchRouter);
+app.use('/matches', routers.matchesRouter);
+app.use('/competitions', routers.competitionsRouter);
 
 // Static Assets
 app.use('/static', express.static(path.join(__dirname, '../public')));

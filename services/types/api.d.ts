@@ -1,48 +1,74 @@
 import { status, winner, scoreType } from '@prisma/client';
 
 export interface ApiScore {
-    winner: winner;
-    duration: scoreType;
+    winner: winner | null;
+    duration: scoreType | null;
     fullTime: {
         homeTeam: number | null;
         awayTeam: number | null;
     };
-    halfTime: {
+    halfTime?: {
         homeTeam: number | null;
         awayTeam: number | null;
     };
-    extraTime: {
+    extraTime?: {
         homeTeam: number | null;
         awayTeam: number | null;
     };
-    penalties: {
+    penalties?: {
         homeTeam: number | null;
         awayTeam: number | null;
     };
 }
 
 export interface ApiMatchCondensed {
-    id: string;
+    id: number;
     competition: {
-        id: string;
+        id: number;
         name: string;
         emblemUrl: string;
     };
     season: {
-        id: string;
+        id: number;
     };
     matchday: number;
     date: string;
     homeTeam: {
-        id: string;
+        id: number;
         name: string;
         crestUrl: string;
     };
     awayTeam: {
-        id: string;
+        id: number;
         name: string;
         crestUrl: string;
     };
     status: status;
     score: ApiScore;
+}
+
+export interface ApiMatchesParams {
+    startDate: Date;
+    endDate: Date;
+    team?: number;
+    competition?: number;
+    season?: number;
+    matchday?: number;
+    homeTeam?: number;
+    awayTeam?: number;
+    status?: status;
+    limit: number;
+    offset: number;
+}
+
+export interface ApiMatchesResponse {
+    start: number;
+    end: number;
+    total: number;
+    matches: ApiMatchCondensed[];
+}
+
+export interface ApiCompetitionParams {
+    id?: number;
+    name?: string;
 }

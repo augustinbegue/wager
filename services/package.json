@@ -8,6 +8,10 @@
     "build": "npm run build -ws"
   },
   "dependencies": {
+    "@prisma/client": "^3.9.1",
     "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^3.10.0-dev.18"
   }
 }

@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum status {
+  SCHEDULED
+  LIVE
+  IN_PLAY
+  PAUSED
+  FINISHED
+  POSTPONED
+  SUSPENDED
+  CANCELED
+}
+
+enum scoreType {
+  FULL_TIME
+  HALF_TIME
+  EXTRA_TIME
+  PENALTIES
+}
+
+enum winner {
+  HOME_TEAM
+  AWAY_TEAM
+  DRAW
+}
+
+model Competition {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  emblemUrl       String
+  code            String   @unique
+  teamIds         Int[]
+  teams           Team[]   @relation(fields: [teamIds], references: [id])
+  currentSeasonId Int      @unique
+  currentSeason   Season   @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
+  pastSeasons     Season[] @relation("competition_pastSeasons")
+  matches         Match[]
+
+  @@map("competitions")
+}
+
+model Season {
+  id                Int          @id @default(autoincrement())
+  startDate         DateTime     @db.Timestamptz(6)
+  endDate           DateTime     @db.Timestamptz(6)
+  currentMatchday   Int?
+  winnerId          Int?
+  winner            Team?        @relation(fields: [winnerId], references: [id])
+  competition       Competition? @relation("competition_currentSeason")
+  pastCompetitionId Int?
+  pastCompetition   Competition? @relation("competition_pastSeasons", fields: [pastCompetitionId], references: [id])
+
+  @@map("seasons")
+}
+
+model Match {
+  id            Int         @id @default(autoincrement())
+  date          DateTime    @db.Timestamptz(6)
+  homeTeamId    Int
+  homeTeam      Team        @relation("matches_homeTeamIdToteams", fields: [homeTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_homeTeam_id")
+  awayTeam      Team        @relation("matches_awayTeamIdToteams", fields: [awayTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_awayTeam_id")
+  awayTeamId    Int
+  status        status
+  matchday      Int
+  winner        winner?
+  homeTeamScore Int?
+  awayTeamScore Int?
+  duration      scoreType?
+  competitionId Int
+  competition   Competition @relation(fields: [competitionId], references: [id])
+
+  @@map("matches")
+}
+
+model Team {
+  id                Int           @id(map: "teamss_pkey") @default(autoincrement())
+  name              String        @unique
+  crestUrl          String?
+  matchesAsAwayTeam Match[]       @relation("matches_awayTeamIdToteams")
+  matchesAsHomeTeam Match[]       @relation("matches_homeTeamIdToteams")
+  competitions      Competition[]
+  wonSeasons        Season[]
+
+  @@map("teams")
+}

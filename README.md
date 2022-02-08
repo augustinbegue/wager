@@ -13,8 +13,8 @@ I've therefore decided to restart it completely, new techs, new experience and n
 `./app`
 
 **NodeJS** - Api and Data Gathering/Scraping\
-_Typescript, Express, Axios_\
+_Typescript, Express, Axios, Prisma_\
 `./services`
 
 **PostgreSQL** - Data storage\
-`./services`
+`./services/prisma`

@@ -1,8 +1,8 @@
-import type { duration, status, winner } from './data'
+import { status, winner, scoreType } from '@prisma/client';
 
 export interface ApiScore {
     winner: winner;
-    duration: duration;
+    duration: scoreType;
     fullTime: {
         homeTeam: number | null;
         awayTeam: number | null;

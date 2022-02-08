@@ -1,64 +1,177 @@
 import { ScraperConfig } from '../../../types/configs';
-import { Competition, DBSeason, Match, Team } from '../../../types/data';
 import { ScrapedMatch, ScrapedTeam } from '../../../types/scraper';
 import { closeBanners, downloadImage, loadFullTable } from './utils';
-import { insertOrUpdateCompetition, insertOrUpdateSeason, insertOrUpdateTeam, insertOrUpdateMatch, getCompetition, updateCurrentMatchday } from '../../../db';
 import { parseScrapedMatches, parseScrapedTeams } from './parsers';
-import { getTeamsByCompetition } from '../../../db/get-teams';
 
-import axios from 'axios';
 import puppeteer from 'puppeteer';
-import fs from 'fs';
+import { prisma, upsertMatch } from '../../../prisma';
+import { Competition, Match, Season, Team } from '@prisma/client';
+import { CompetitionIncludesSeason, MatchIncludesTeams } from '../../../types/db';
 
 export async function scrapePath(browser: puppeteer.Browser, config: ScraperConfig, baseUrl: string, path: string) {
     const page = await browser.newPage();
 
-    let competition: Competition;
+    let competition: CompetitionIncludesSeason;
     let teams: Team[];
     let matches: Match[] = [];
 
     // Scrape competition info
     if (config.updateCompetitions) {
-        competition = await scrapeCompetition(page, baseUrl, path);
+        let scrapedCompetition = await scrapeCompetition(page, baseUrl, path);
 
-        competition.id = await insertOrUpdateCompetition(competition);
+        console.log(scrapedCompetition);
 
-        competition.currentSeason.competition = competition.id;
-        competition.currentSeason.id = await insertOrUpdateSeason(competition.currentSeason);
+        let res = await prisma.competition.upsert({
+            where: {
+                code: scrapedCompetition.code,
+            },
+            create: {
+                name: scrapedCompetition.name,
+                code: scrapedCompetition.code,
+                emblemUrl: scrapedCompetition.emblemUrl,
+                currentSeason: {
+                    create: {
+                        startDate: scrapedCompetition.currentSeason.startDate,
+                        endDate: scrapedCompetition.currentSeason.endDate,
+                    }
+                },
+            },
+            update: {
+                name: scrapedCompetition.name,
+                emblemUrl: scrapedCompetition.emblemUrl,
+                currentSeason: {
+                    update: {
+                        startDate: scrapedCompetition.currentSeason.startDate,
+                        endDate: scrapedCompetition.currentSeason.endDate,
+                    }
+                },
+            },
+            include: {
+                currentSeason: true,
+            }
+        });
+
+        if (!res.currentSeason) {
+            let currentSeason = await prisma.season.findFirst({
+                where: {
+                    competition: {
+                        id: res.id,
+                    },
+                    startDate: scrapedCompetition.currentSeason.startDate,
+                    endDate: scrapedCompetition.currentSeason.endDate,
+                },
+            })
+
+            if (!currentSeason) {
+                throw new Error("Could not find current season for competition with id '" + res.id + "'.");
+            }
+
+            competition = {
+                ...res,
+                currentSeason,
+            };
+        } else {
+            competition = res as CompetitionIncludesSeason;
+        }
+
     } else {
-        let res = await getCompetition({ code: path });
+        let res = await prisma.competition.findFirst({
+            where: {
+                code: path,
+            },
+            include: {
+                currentSeason: true,
+            }
+        });
 
         if (!res) {
             throw new Error("Competition with code '" + path + "' not found. You may need to enable config.updateCompetitions.");
         }
 
-        competition = res?.data;
-        competition.id = res.id;
+        if (!res.currentSeason) {
+            throw new Error("Could not find current season for competition with id '" + res.id + "'.");
+        }
+
+        competition = res as CompetitionIncludesSeason;
+    }
+
+    if (!competition.currentSeason) {
+        throw new Error("Competition with code '" + path + "' has no current season.");
     }
 
     // Update season and matchday
-    competition.currentSeason.currentMatchday = await updateCurrentMatchday(competition.currentSeason);
+    let latestMatch = await prisma.match.findFirst({
+        where: {
+            competition: {
+                currentSeasonId: competition.currentSeason.id,
+            }
+        },
+        orderBy: {
+            date: 'desc',
+        },
+        select: {
+            matchday: true,
+        }
+    })
+
+    if (!latestMatch) {
+        console.error(`No matches found for competition with code '${competition.code}', matchday is defaulted to 1`);
+    }
+    competition.currentSeason = await prisma.season.update({
+        where: {
+            id: competition.currentSeason.id,
+        },
+        data: {
+            currentMatchday: latestMatch ? latestMatch.matchday : 1,
+        }
+    })
 
     // Scrape teams in the competition
     if (config.updateTeams) {
         let scrapedTeams = await scrapeTeams(config, page, baseUrl, path);
         teams = parseScrapedTeams(scrapedTeams);
 
-        competition.teams = [];
+        competition.teamIds = [];
         for (let i = 0; i < teams.length; i++) {
-            const team = teams[i];
-            team.id = await insertOrUpdateTeam(team);
-            competition.teams.push(team.id);
+            teams[i] = await prisma.team.upsert({
+                where: {
+                    name: teams[i].name,
+                },
+                create: {
+                    name: teams[i].name,
+                    crestUrl: teams[i].crestUrl,
+                    competitions: {
+                        connect: {
+                            id: competition.id,
+                        }
+                    }
+                },
+                update: {
+                    name: teams[i].name,
+                    crestUrl: teams[i].crestUrl,
+                    competitions: {
+                        connect: {
+                            id: competition.id,
+                        }
+                    }
+                }
+            })
         }
-
-        competition.lastUpdated = new Date().toUTCString();
-        await insertOrUpdateCompetition(competition);
     } else {
-        teams = await getTeamsByCompetition(competition.id);
+        let res = await prisma.competition.findFirst({
+            where: {
+                id: competition.id,
+            },
+            include: {
+                teams: true,
+            }
+        })
 
-        if (teams.length === 0) {
+        if (!res || res.teams.length == 0) {
             throw new Error("No teams found for competition with id '" + competition.id + "'. You may need to enable config.updateTeams.");
         }
+
+        teams = res.teams;
     }
 
     // Scrape Live Matches
@@ -82,7 +195,8 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
 
     for (let i = 0; i < matches.length; i++) {
         const match = matches[i];
-        match.id = await insertOrUpdateMatch(match);
+        let res = upsertMatch(match);
+
     }
 
     await page.close();
@@ -200,7 +314,7 @@ export async function scrapeResults(config: ScraperConfig, page: puppeteer.Page,
     return scrapedMatches;
 }
 
-export async function scrapeMatch(match: Match, page: puppeteer.Page, baseUrl: string, path: string) {
+export async function scrapeMatch(match: Match & { homeTeam: Team, awayTeam: Team }, page: puppeteer.Page, baseUrl: string, path: string) {
     await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
 
     await closeBanners(page);
@@ -303,12 +417,10 @@ export async function scrapeCompetition(page: puppeteer.Page, baseUrl: string, p
     const season = await page.evaluate(() => {
         let yearContainer = document.querySelector("#mc > div.container__livetable > div.container__heading > div.heading > div.heading__info") as HTMLDivElement;
 
-        let season: DBSeason = {
-            id: "-1",
-            currentMatchday: -1,
-            startDate: "",
-            endDate: "",
-            winner: null,
+        let season = {
+            currentMatchday: 0,
+            startDate: "2021-08-01",
+            endDate: "2022-07-31",
         };
 
         if (yearContainer) {
@@ -323,14 +435,17 @@ export async function scrapeCompetition(page: puppeteer.Page, baseUrl: string, p
         return season;
     });
 
-    let competition: Competition = {
-        id: "-1",
+    let competition = {
+        id: 0,
         name: name,
         emblemUrl: await downloadImage(emblemUrl, 'competitions/', name.replace(/\s/g, '').toLowerCase() + '.png'),
         code: path,
-        currentSeason: season,
+        currentSeason: {
+            startDate: new Date(season.startDate),
+            endDate: new Date(season.endDate),
+            currentMatchday: season.currentMatchday,
+        },
         numberOfAvailableSeasons: 1,
-        lastUpdated: new Date().toUTCString(),
         teams: [],
     };
     return competition;

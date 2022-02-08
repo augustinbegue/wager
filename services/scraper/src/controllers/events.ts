@@ -1,10 +1,12 @@
+import { prisma, upsertMatch } from '../../../prisma'
+import { Competition, Match, Team } from '@prisma/client';
+
 import { ScraperConfig } from "../../../types/configs";
 import puppeteer from 'puppeteer';
 import { scrapeLive, scrapeMatch, scrapePath } from "./scrapers";
-import { Competition, Match } from "../../../types/data";
 import { ScrapedMatch } from "../../../types/scraper";
-import { getCompetition, updateCurrentMatchday, getTeamsByCompetition, insertOrUpdateMatch, getMatch } from "../../../db";
 import { parseScrapedMatches } from "./parsers";
+import { CompetitionIncludesSeason } from '../../../types/db';
 
 export async function update(config: ScraperConfig) {
     console.log('Update started...');
@@ -53,33 +55,33 @@ export async function update(config: ScraperConfig) {
     let cutoff = now + (1000 * 60 * 60 * 12);
 
     let next12HMatches = matches.filter((match) => {
-        let date = new Date(match.utcDate).getTime();
+        let date = match.date.getTime();
 
         return match.status === 'SCHEDULED' && date < cutoff || match.status === 'IN_PLAY';
     })
 
     console.log("Found " + next12HMatches.length + " matches in the next 12 hours:");
     next12HMatches.forEach(match => {
-        console.log(`${match.homeTeam.name} vs ${match.awayTeam.name} - ${new Date(match.utcDate).toLocaleString()}`);
-        setTimeout(matchStart, new Date(match.utcDate).getTime() - now, match);
+        console.log(`${match.homeTeamId} vs ${match.awayTeamId} - ${match.date.toLocaleString()}`);
+        setTimeout(matchStart, match.date.getTime() - now, match);
     });
 }
 
-let liveCompetitions: string[] = [];
-let liveMatches: { matchId: string, code: string }[] = [];
-let startedMatches: { matchId: string, code: string }[] = [];
+let liveCompetitions: number[] = [];
+let liveMatches: { matchId: number, code: string }[] = [];
+let startedMatches: { matchId: number, code: string }[] = [];
 
 export async function matchStart(match: Match) {
-    console.log('Match started: ' + match.homeTeam.name + ' vs ' + match.awayTeam.name);
+    console.log('Match started: ' + match.homeTeamId + ' vs ' + match.homeTeamId);
 
-    let competition = await getCompetition({ name: match.competition.name })
+    let competition = await prisma.competition.findUnique({ where: { id: match.competitionId } });
     if (!competition) {
-        return;
+        throw new Error('Competition with id ' + match.competitionId + ' not found');
     }
 
     liveMatches.push({
         matchId: match.id,
-        code: competition.data.code
+        code: competition.code
     });
 
     if (liveCompetitions.indexOf(competition.id) === -1) {
@@ -110,19 +112,20 @@ export async function liveScrape() {
 
         try {
             // Get competition
-            let competition: Competition;
-            let res = await getCompetition({ id: id });
-            if (!res) {
+            let competition: CompetitionIncludesSeason;
+            let findUnique = await prisma.competition.findUnique({ where: { id }, include: { currentSeason: true } });
+            if (!findUnique) {
                 throw new Error("Competition with id '" + id + "' not found.");
             }
-            competition = res?.data;
-            competition.currentSeason.currentMatchday = await updateCurrentMatchday(competition.currentSeason);
+
+            competition = findUnique;
 
             // Get Teams
-            let teams = await getTeamsByCompetition(competition.id);
-            if (teams.length === 0) {
+            let findTeams = await prisma.competition.findUnique({ where: { id }, select: { teams: true } });
+            if (findTeams?.teams.length === 0) {
                 throw new Error("No teams found for competition with id '" + competition.id + "'.");
             }
+            let teams = findTeams?.teams as Team[];
 
             // Scrape live matches
             let scrapedMatches = await scrapeLive(page, baseUrl, competition.code);
@@ -130,8 +133,8 @@ export async function liveScrape() {
 
             // Update matches
             for (let i = 0; i < matches.length; i++) {
-                console.log(`Updating match ${matches[i].id} (${matches[i].homeTeam.name} vs ${matches[i].awayTeam.name})`);
-                matches[i].id = await insertOrUpdateMatch(matches[i]);
+                console.log(`Updating match ${matches[i].id} (${matches[i].homeTeamId} vs ${matches[i].awayTeamId})`);
+                matches[i] = await upsertMatch(matches[i]);
             }
         } catch (error) {
             console.error(`Error scraping live matches for competition with code '${id}':`);
@@ -152,13 +155,13 @@ export async function liveScrape() {
     // Check for finished matches
     for (let i = 0; i < startedMatches.length; i++) {
         const obj = startedMatches[i];
-        let match = matches.find(match => match.id === obj.matchId);
+        let match: Match | undefined | null = matches.find(match => match.id === obj.matchId);
 
         if (!match) {
-            match = await getMatch(obj.matchId);
+            let matchIncludesTeams = await prisma.match.findUnique({ where: { id: obj.matchId }, include: { homeTeam: true, awayTeam: true } });
 
-            if (match) {
-                let scrapedMatch = await scrapeMatch(match, page, baseUrl, obj.code);
+            if (matchIncludesTeams != null) {
+                let scrapedMatch = await scrapeMatch(matchIncludesTeams, page, baseUrl, obj.code);
 
                 if (scrapedMatch) {
                     matchEnd(obj, scrapedMatch);
@@ -178,28 +181,28 @@ export async function liveScrape() {
     setTimeout(liveScrape, 1000 * 30);
 }
 
-export async function matchEnd(obj: { matchId: string, code: string }, scrapedMatch: ScrapedMatch) {
+export async function matchEnd(obj: { matchId: number, code: string }, scrapedMatch: ScrapedMatch) {
     console.log('Match ended: ' + obj.matchId);
 
 
-    let competition = await getCompetition({ code: obj.code });
+    let competition = await prisma.competition.findUnique({ where: { code: obj.code }, include: { currentSeason: true, teams: true } });
     if (!competition) {
         console.error('Competition with code ' + obj.code + ' not found.');
         return;
     }
 
-    let teams = await getTeamsByCompetition(competition.id);
+    let teams = competition.teams;
     if (teams.length === 0) {
         console.error('No teams found for competition with id ' + competition.id + '.');
         return;
     }
 
-    let match = parseScrapedMatches([scrapedMatch], competition.data, teams, 'FINISHED')[0];
-    match.id = await insertOrUpdateMatch(match);
+    let match = parseScrapedMatches([scrapedMatch], competition, teams, 'FINISHED')[0];
+    match = await upsertMatch(match);
 
     liveMatches.splice(liveMatches.indexOf(obj), 1);
     startedMatches.splice(liveMatches.indexOf(obj), 1);
     if (liveMatches.filter(o => o.code === obj.code).length === 0) {
-        liveCompetitions.splice(liveCompetitions.indexOf(obj.code), 1);
+        liveCompetitions.splice(liveCompetitions.indexOf(competition.id), 1);
     }
 }

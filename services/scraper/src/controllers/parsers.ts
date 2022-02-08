@@ -1,21 +1,18 @@
 import moment from "moment";
-import { Competition, Match, duration, winner, Team, status } from "../../../types/data";
 import { ScrapedMatch, ScrapedTeam } from "../../../types/scraper";
+import { CompetitionIncludesSeason } from "../../../types/db";
+import { Team, status, scoreType, Match, winner } from "@prisma/client";
 
 const scoreStatuses: status[] = ['LIVE', 'IN_PLAY', 'FINISHED', 'PAUSED'];
 const matchDayStatuses: status[] = ['FINISHED', 'SCHEDULED'];
 
-export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: Competition, teams: Team[], status: status = 'FINISHED'): Match[] {
+export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: CompetitionIncludesSeason, teams: Team[], status: status = 'FINISHED'): Match[] {
     return scrapedMatches.map((scrapedMatch) => {
         let fullTime = {
             homeTeam: scrapedMatch.homeScoreFullStr ? parseInt(scrapedMatch.homeScoreFullStr) : null,
             awayTeam: scrapedMatch.awayScoreFullStr ? parseInt(scrapedMatch.awayScoreFullStr) : null,
         }
-        let halfTime = {
-            homeTeam: scrapedMatch.homeScoreHalfStr ? parseInt(scrapedMatch.homeScoreHalfStr) : null,
-            awayTeam: scrapedMatch.awayScoreHalfStr ? parseInt(scrapedMatch.awayScoreHalfStr) : null,
-        }
-        let duration: duration = 'REGULAR';
+        let duration: scoreType = scoreType.FULL_TIME;
 
         let date = new Date();
 
@@ -44,46 +41,30 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
         }
 
         // Parse Winner
-        let winner: winner = fullTime.homeTeam != null && fullTime.awayTeam != null ?
+        let matchWinner: winner | null = fullTime.homeTeam != null && fullTime.awayTeam != null ?
             fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM'
             : null;
 
+        let homeTeam = teams.find((team) => team.name === scrapedMatch.homeTeamName);
+        let awayTeam = teams.find((team) => team.name === scrapedMatch.awayTeamName);
+
+        if (!homeTeam || !awayTeam) {
+            throw new Error("team not found: " + scrapedMatch.homeTeamName || scrapedMatch.awayTeamName);
+        }
+
         return {
-            id: "-1",
-            competition: {
-                id: competition.id,
-                name: competition.name,
-            },
-            season: competition.currentSeason,
-            utcDate: date.toUTCString(),
+            id: 0,
+            date: date,
+            homeTeamId: homeTeam.id,
+            awayTeamId: awayTeam.id,
             status: status,
-            // scrapedMatch.matchday can be trusted only if the match is not live
-            matchday: matchDayStatuses.includes(status) ? scrapedMatch.currentMatchday : competition.currentSeason.currentMatchday,
-            stage: '',
-            group: null,
-            lastUpdated: new Date().toUTCString(),
-            homeTeam: {
-                id: teams.find((team) => team.name === scrapedMatch.homeTeamName)?.id || "-1",
-                name: scrapedMatch.homeTeamName,
-            },
-            awayTeam: {
-                id: teams.find((team) => team.name === scrapedMatch.awayTeamName)?.id || "-1",
-                name: scrapedMatch.awayTeamName,
-            },
-            score: {
-                winner: winner,
-                duration: duration,
-                fullTime: fullTime,
-                halfTime: halfTime,
-                extraTime: {
-                    homeTeam: null,
-                    awayTeam: null,
-                },
-                penalties: {
-                    homeTeam: null,
-                    awayTeam: null,
-                },
-            },
+            matchday: (matchDayStatuses.includes(status) ? scrapedMatch.currentMatchday : competition.currentSeason.currentMatchday) || 1,
+            winner: matchWinner,
+            homeTeamScore: fullTime.homeTeam,
+            awayTeamScore: fullTime.awayTeam,
+            duration: duration,
+            competitionId: competition.id,
+            competition: competition
         };
     });
 }
@@ -91,13 +72,10 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
 export function parseScrapedTeams(scrapedTeams: ScrapedTeam[]): Team[] {
     return scrapedTeams.map((scrapedTeam) => {
         return {
-            id: "-1",
+            id: 0,
             name: scrapedTeam.name,
             shortName: scrapedTeam.name,
-            tla: "",
             crestUrl: scrapedTeam.crestUrl,
-            clubColors: "",
-            lastUpdated: new Date().toUTCString(),
         }
     });
 }

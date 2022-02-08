@@ -23,7 +23,6 @@ export async function competitionsController(req: Request, res: Response) {
                 name: true,
                 emblemUrl: true,
                 currentSeason: true,
-                teams: !!req.params.id
             }
         });
 

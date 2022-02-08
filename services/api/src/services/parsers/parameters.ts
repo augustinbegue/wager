@@ -1,7 +1,7 @@
 import { ApiCompetitionParams, ApiMatchesParams } from '../../../../types/api';
 
-export function parseMatchesParams(query: any): ApiMatchesParams {
-    if (!query.startDate || !query.endDate) {
+export function parseMatchesParams(query: any, dateMendatory = true): ApiMatchesParams {
+    if (dateMendatory && (!query.startDate || !query.endDate)) {
         throw new Error('Missing required params: startDate, endDate');
     }
 

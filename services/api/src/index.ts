@@ -1,10 +1,20 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Firebase Admin SDK
+import { initializeApp } from 'firebase-admin/app';
+import { credential } from 'firebase-admin';
+import serviceAccount from '../../wager-80a1f-firebase-adminsdk-agk6x-aaba3ec123.json'
+initializeApp({
+    credential: credential.cert(serviceAccount as any)
+});
+
+// Express and dependencies
 import express from 'express';
 import path from 'path';
 import routers from './routes';
 import cors from 'cors';
+import bodyParser from 'body-parser';
 
 export const app = express();
 
@@ -41,9 +51,10 @@ function demoLogger(req: any, res: any, next: any) {
     next();
 };
 
-// Middlewaresnpm i --save-dev @types/corsnpm i --save-dev @types/cors
+// Middlewares
 app.use(demoLogger);
 app.use(cors());
+app.use(bodyParser.json());
 
 app.use('/matches', routers.matchesRouter);
 app.use('/competitions', routers.competitionsRouter);

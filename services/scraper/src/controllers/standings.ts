@@ -1,8 +1,91 @@
-import { Standings, winner } from "@prisma/client";
+import { Match, Standings, winner } from "@prisma/client";
 import { prisma } from "../../../prisma";
 import { CompetitionFull } from "../../../types/db";
 
-export async function updateStandings() {
+export async function updateStandingsForMatch(match: Match) {
+    if (match.status != "FINISHED")
+        return;
+
+    let competition = await prisma.competition.findUnique({
+        where: {
+            id: match.competitionId,
+        },
+        include: {
+            currentSeason: true,
+        },
+    });
+
+    if (!competition)
+        throw new Error("Competition not found");
+
+    let homeTeamEntry = await prisma.standings.findFirst({
+        where: {
+            teamId: match.homeTeamId,
+            competitionId: competition.id,
+            seasonId: competition.currentSeason.id,
+        }
+    });
+
+    let awayTeamEntry = await prisma.standings.findFirst({
+        where: {
+            teamId: match.awayTeamId,
+            competitionId: competition.id,
+            seasonId: competition.currentSeason.id,
+        }
+    });
+
+    if (!homeTeamEntry || !awayTeamEntry)
+        throw new Error("Team " + homeTeamEntry || awayTeamEntry + " not found in standings");
+
+    homeTeamEntry.playedGames++;
+    awayTeamEntry.playedGames++;
+
+    if (match.homeTeamScore) {
+        homeTeamEntry.goalsFor += match.homeTeamScore;
+        awayTeamEntry.goalsAgainst += match.homeTeamScore;
+    }
+
+    if (match.awayTeamScore) {
+        homeTeamEntry.goalsAgainst += match.awayTeamScore;
+        awayTeamEntry.goalsFor += match.awayTeamScore;
+    }
+
+    if (match.winner === winner.HOME_TEAM) {
+        homeTeamEntry.won++;
+        homeTeamEntry.points += 3;
+        awayTeamEntry.lost++;
+    } else if (match.winner === winner.AWAY_TEAM) {
+        awayTeamEntry.won++;
+        awayTeamEntry.points += 3;
+        homeTeamEntry.lost++;
+    } else {
+        homeTeamEntry.points++;
+        homeTeamEntry.draw++;
+        awayTeamEntry.points++;
+        awayTeamEntry.draw++;
+    }
+
+    await Promise.all([
+        prisma.standings.update({
+            where: {
+                id: homeTeamEntry.id,
+            },
+            data: {
+                ...homeTeamEntry,
+            }
+        }),
+        prisma.standings.update({
+            where: {
+                id: awayTeamEntry.id,
+            },
+            data: {
+                ...awayTeamEntry,
+            }
+        }),
+    ]);
+}
+
+export async function computeStandings() {
     let competitions = await prisma.competition.findMany({
         include: {
             teams: true,
@@ -98,8 +181,6 @@ async function updateCompetitionStandings(competition: CompetitionFull) {
     let promises = [];
     for (let i = 0; i < standingsArr.length; i++) {
         const entry = standingsArr[i];
-
-        console.log("Inserting standings for " + entry.teamId, entry);
 
         promises.push(prisma.standings.upsert({
             where: {

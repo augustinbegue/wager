@@ -72,7 +72,7 @@ export async function competitionByIdController(req: Request, res: Response) {
             },
         });
 
-        res.json({ ...competition, path: req.path });
+        res.json(competition);
     } catch (error) {
         console.error(error);
         res.status(500).json({

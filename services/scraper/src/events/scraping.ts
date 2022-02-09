@@ -1,12 +1,14 @@
-import { prisma, upsertMatch } from '../../../prisma'
+import puppeteer from 'puppeteer';
+
+import { prisma } from '../../../prisma'
 import { Competition, Match, Team } from '@prisma/client';
 
-import puppeteer from 'puppeteer';
-import { scrapeLive, scrapeMatch } from "../controllers/scrapers";
-import { ScrapedMatch } from "../../../types/scraper";
-import { parseScrapedMatches } from "../controllers/parsers";
 import { CompetitionIncludesSeason } from '../../../types/db';
-import { updateStandings } from '../controllers/standings';
+import { ScrapedMatch } from "../../../types/scraper";
+
+import { scrapeLive, scrapeMatch } from "../controllers/scrapers";
+import { parseScrapedMatches } from "../controllers/parsers";
+import { upsertMatch } from "../controllers/data";
 
 let liveCompetitions: number[] = [];
 let liveMatches: { matchId: number, code: string }[] = [];
@@ -147,7 +149,4 @@ export async function scrapedMatchEnd(obj: { matchId: number, code: string }, sc
     if (liveMatches.filter(o => o.code === obj.code).length === 0) {
         liveCompetitions.splice(liveCompetitions.indexOf(competition.id), 1);
     }
-
-    // Fire events
-
 }

@@ -2,7 +2,7 @@ import { Match } from '@prisma/client';
 import { ScraperConfig } from "../../../types/configs";
 import { scrapeData } from "../controllers/scrapers";
 import { scrapedMatchStart } from './scraping';
-import { updateStandings } from '../controllers/standings';
+import { computeStandings } from '../controllers/standings';
 
 export async function update(config: ScraperConfig) {
     console.log('Update started...');
@@ -28,5 +28,5 @@ export async function update(config: ScraperConfig) {
     });
 
     // Update the standings
-    updateStandings();
+    computeStandings();
 }

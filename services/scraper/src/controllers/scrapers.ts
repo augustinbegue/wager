@@ -4,9 +4,10 @@ import { closeBanners, downloadImage, loadFullTable } from './utils';
 import { parseScrapedMatches, parseScrapedTeams } from './parsers';
 
 import puppeteer from 'puppeteer';
-import { prisma, upsertMatch } from '../../../prisma';
+import { prisma } from '../../../prisma';
 import { Competition, Match, Season, Team } from '@prisma/client';
 import { CompetitionIncludesSeason, MatchIncludesTeams } from '../../../types/db';
+import { upsertMatch } from "./data";
 
 export async function scrapeData(config: ScraperConfig) {
     const baseUrl = process.env.SCRAPING_URL;

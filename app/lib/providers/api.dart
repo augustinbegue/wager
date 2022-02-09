@@ -30,16 +30,11 @@ class ApiScoreElement {
 class ApiScore {
   final ApiWinner winner;
   final ApiScoreElement fullTime;
-  final ApiScoreElement halfTime;
-  final ApiScoreElement extraTime;
-  final ApiScoreElement penalties;
 
-  const ApiScore(
-      {required this.winner,
-      required this.fullTime,
-      required this.halfTime,
-      required this.extraTime,
-      required this.penalties});
+  const ApiScore({
+    required this.winner,
+    required this.fullTime,
+  });
 
   factory ApiScore.fromJson(Map<String, dynamic> json) {
     ApiWinner winner = ApiWinner.DRAW;
@@ -51,16 +46,12 @@ class ApiScore {
     }
 
     return ApiScore(
-        winner: winner,
-        fullTime: ApiScoreElement.fromJson(json['fullTime']),
-        halfTime: ApiScoreElement.fromJson(json['halfTime']),
-        extraTime: ApiScoreElement.fromJson(json['extraTime']),
-        penalties: ApiScoreElement.fromJson(json['penalties']));
+        winner: winner, fullTime: ApiScoreElement.fromJson(json['fullTime']));
   }
 }
 
 class ApiCompetitionCondensed {
-  final String id;
+  final int id;
   final String name;
   final String emblemUrl;
 
@@ -84,7 +75,7 @@ class ApiSeasonCondensed {
 }
 
 class ApiTeamCondensed {
-  final String id;
+  final int id;
   final String name;
   final String crestUrl;
 
@@ -98,7 +89,7 @@ class ApiTeamCondensed {
 }
 
 class ApiMatchCondensed {
-  final String id;
+  final int id;
   final ApiCompetitionCondensed competition;
   final ApiSeasonCondensed season;
   final int matchday;
@@ -129,14 +120,12 @@ class ApiMatchCondensed {
       }
     }
 
-    if (status != ApiStatus.SCHEDULED) print(status);
-
     return ApiMatchCondensed(
         id: json['id'],
         competition: ApiCompetitionCondensed.fromJson(json['competition']),
         season: ApiSeasonCondensed.fromJson(json['season']),
         matchday: json['matchday'],
-        date: DateTime.parse(json['date']),
+        date: DateTime.parse(json['date']).toLocal(),
         homeTeam: ApiTeamCondensed.fromJson(json['homeTeam']),
         awayTeam: ApiTeamCondensed.fromJson(json['awayTeam']),
         score: ApiScore.fromJson(json['score']),
@@ -166,11 +155,11 @@ class WeekMatchesList {
 }
 
 class Api {
-  static const String endpoint = 'new-mole-26.loca.lt';
+  static const String endpoint = 'cd71-73-202-235-133.ngrok.io';
 
   static Future<WeekMatchesList> fetchWeekMatchesList() async {
-    final response = await http.get(
-        Uri(scheme: 'http', host: endpoint, path: '/matches/week', port: 3000));
+    final response = await http
+        .get(Uri(scheme: 'http', host: endpoint, path: '/matches/week'));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as List<dynamic>;

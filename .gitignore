@@ -3,3 +3,6 @@
 
 # Build directories
 dist
+
+# Firebase service account credentials
+*-firebase-adminsdk-*.json

@@ -13,24 +13,35 @@ import 'package:wager_app/pages/ranking_page.dart';
       AutoRoute(page: EmptyRouterPage, name: 'HomeRouter', path: '', children: [
         AutoRoute(path: '', page: HomePage),
       ]),
-
-      AutoRoute(page: EmptyRouterPage, name: 'RankingRouter', path: 'ranking', children: [
-        AutoRoute(path: '', page: RankingPage),
-      ]),
-
-      AutoRoute(page: EmptyRouterPage, name: 'MatchesRouter', path: 'matches', children: [
-        AutoRoute(path: '', page: MatchesPage),
-      ]),
-
-      AutoRoute(page: EmptyRouterPage, name: 'HistoryRouter', path: 'history', children: [
-        AutoRoute(path: '', page: HistoryPage),
-      ]),
-
-      AutoRoute(page: EmptyRouterPage, name: 'ProfileRouter', path: 'profile', children: [
-        AutoRoute(path: '', page: ProfilePage),
-      ]),
+      AutoRoute(
+          page: EmptyRouterPage,
+          name: 'RankingRouter',
+          path: 'ranking',
+          children: [
+            AutoRoute(path: '', page: RankingPage),
+          ]),
+      AutoRoute(
+          page: EmptyRouterPage,
+          name: 'MatchesRouter',
+          path: 'matches',
+          children: [
+            AutoRoute(path: '', page: MatchesPage),
+          ]),
+      AutoRoute(
+          page: EmptyRouterPage,
+          name: 'HistoryRouter',
+          path: 'history',
+          children: [
+            AutoRoute(path: '', page: HistoryPage),
+          ]),
+      AutoRoute(
+          page: EmptyRouterPage,
+          name: 'ProfileRouter',
+          path: 'profile',
+          children: [
+            AutoRoute(path: '', page: ProfilePage),
+          ]),
     ]),
   ],
 )
-
 class $AppRouter {}

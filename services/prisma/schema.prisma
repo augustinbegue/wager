@@ -153,10 +153,12 @@ model Bet {
 
 // accounts
 model User {
-  id    Int     @id(map: "users_pkey") @default(autoincrement())
-  email String  @unique
-  name  String?
-  bets  Bet[]
+  id       Int     @id(map: "users_pkey") @default(autoincrement())
+  uid      String  @unique
+  email    String  @unique
+  photoUrl String?
+  name     String?
+  bets     Bet[]
 
   @@map("users")
 }

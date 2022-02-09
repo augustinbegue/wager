@@ -1,4 +1,10 @@
-import { status, winner, scoreType } from '@prisma/client';
+import { status, winner, scoreType, User } from '@prisma/client';
+import { Request, Response } from 'express';
+import { DecodedIdToken } from 'firebase-admin/lib/auth/token-verifier';
+export interface AuthenticatedRequest extends Request {
+    decoded: DecodedIdToken;
+    user: User;
+}
 
 export interface ApiScore {
     winner: winner | null;

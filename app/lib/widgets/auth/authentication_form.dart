@@ -56,8 +56,9 @@ class _AuthenticationFormState extends State<AuthenticationForm> {
           ElevatedButton(
             onPressed: () {
               authenticationService.signOut();
+              cancel();
             },
-            child: const Text('Continue'),
+            child: const Text('Logout'),
           ),
         ],
       );
@@ -101,8 +102,13 @@ class _AuthenticationFormState extends State<AuthenticationForm> {
           );
         case ApplicationLoginState.register:
           return RegisterForm(
-            submit: (String displayName, String password) async {
+            submit: (String displayName, String password,
+                String passwordConfirm) async {
               try {
+                if (password != passwordConfirm) {
+                  throw Exception('Passwords do not match.');
+                }
+
                 await authenticationService.registerUser(
                     email: _emailAddress,
                     password: password,
@@ -118,13 +124,22 @@ class _AuthenticationFormState extends State<AuthenticationForm> {
             cancel: cancel,
           );
         case ApplicationLoginState.password:
-          return Center(
-            child: Text('Password'),
-          );
-        case ApplicationLoginState.loggedIn:
-          return Center(
-            child: Text('Logged In'),
-          );
+          return PasswordForm(
+              submit: (String password) async {
+                try {
+                  await authenticationService.signIn(
+                      email: _emailAddress, password: password);
+
+                  setState(() {
+                    _applicationLoginState = ApplicationLoginState.loggedIn;
+                  });
+                } catch (e) {
+                  handleError(e.toString());
+                }
+              },
+              cancel: cancel);
+        default:
+          return Container();
       }
     }
   }
@@ -199,11 +214,81 @@ class _EmailFormState extends State<EmailForm> {
   }
 }
 
+class PasswordForm extends StatefulWidget {
+  const PasswordForm({Key? key, required this.submit, required this.cancel})
+      : super(key: key);
+
+  final void Function(String password) submit;
+  final void Function() cancel;
+
+  @override
+  _PasswordFormState createState() => _PasswordFormState();
+}
+
+class _PasswordFormState extends State<PasswordForm> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          TextField(
+            obscureText: true,
+            controller: _controller,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Password',
+            ),
+            onSubmitted: (String value) {
+              widget.submit(value);
+            },
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () {
+                  widget.cancel();
+                },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  widget.submit(_controller.text.trim());
+                },
+                child: const Text('Next'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class RegisterForm extends StatefulWidget {
   const RegisterForm({Key? key, required this.submit, required this.cancel})
       : super(key: key);
 
-  final void Function(String displayName, String password) submit;
+  final void Function(
+      String displayName, String password, String passwordConfirm) submit;
   final void Function() cancel;
 
   @override
@@ -283,8 +368,10 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  widget.submit(_nameController.text.trim(),
-                      _passwordController.text.trim());
+                  widget.submit(
+                      _nameController.text.trim(),
+                      _passwordController.text.trim(),
+                      _passwordConfirmationController.text.trim());
                 },
                 child: const Text('Register'),
               ),

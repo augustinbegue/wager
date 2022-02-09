@@ -30,25 +30,16 @@ class AuthenticationService {
 
       return true;
     } on FirebaseAuthException catch (e) {
-      throw e.message ?? 'An error occurred.';
+      if (e.code == 'user-not-found') {
+        throw 'There is no user record corresponding to this identifier. The user may have been deleted.';
+      } else if (e.code == 'wrong-password') {
+        throw 'The password is invalid.';
+      } else if (e.code == 'user-disabled') {
+        throw 'This account has been disabled.';
+      } else {
+        throw 'We have failed to sign you in. Please try again later.';
+      }
     }
-  }
-
-  Future<bool> signUp({required String email, required String password}) async {
-    try {
-      await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      return true;
-    } on FirebaseAuthException catch (e) {
-      throw e.message ?? 'An error occurred.';
-    }
-  }
-
-  Future<void> signOut() async {
-    await _firebaseAuth.signOut();
   }
 
   Future<bool> registerUser(
@@ -64,12 +55,7 @@ class AuthenticationService {
 
       await credentials.user?.updateDisplayName(displayName);
 
-      ActionCodeSettings actionCodeSettings = ActionCodeSettings(
-        url: 'https://flutter-firebase-auth.firebaseapp.com/',
-        handleCodeInApp: true,
-      );
-
-      await credentials.user?.sendEmailVerification();
+      // TODO: Email verification
 
       return true;
     } on FirebaseAuthException catch (e) {
@@ -86,5 +72,9 @@ class AuthenticationService {
       }
       throw 'An error occurred.';
     }
+  }
+
+  Future<void> signOut() async {
+    await _firebaseAuth.signOut();
   }
 }

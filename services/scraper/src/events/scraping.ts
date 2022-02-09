@@ -8,7 +8,7 @@ import { ScrapedMatch } from "../../../types/scraper";
 
 import { scrapeLive, scrapeMatch } from "../controllers/scrapers";
 import { parseScrapedMatches } from "../controllers/parsers";
-import { upsertMatch } from "../controllers/data";
+import { upsertMatch } from "../controllers/db";
 
 let liveCompetitions: number[] = [];
 let liveMatches: { matchId: number, code: string }[] = [];

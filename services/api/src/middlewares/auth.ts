@@ -13,7 +13,7 @@ export async function isAuthenticated(req: Request, res: Response, next: Functio
     try {
         const decodedToken = await auth().verifyIdToken(token, true);
 
-        req.user = {
+        (req as any).user = {
             uid: decodedToken.uid,
             displayName: decodedToken.name,
             email: decodedToken.email,

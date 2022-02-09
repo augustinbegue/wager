@@ -1,6 +1,6 @@
 import { prisma } from '../../../../prisma';
 import { Request, Response } from 'express';
-import { parseMatches } from '../../services/parseMatches';
+import { parseMatches } from '../../services/parsers/matches';
 import { parseMatchesParams } from '../../services/parsers/parameters';
 
 export async function matchesController(req: Request, res: Response) {

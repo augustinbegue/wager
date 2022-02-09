@@ -21,6 +21,7 @@ export async function upsertMatch(match: Match) {
                 homeTeamScore: match.homeTeamScore,
                 awayTeamScore: match.awayTeamScore,
                 duration: match.duration,
+                status: match.status,
             }
         })
 

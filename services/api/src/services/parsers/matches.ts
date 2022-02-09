@@ -1,5 +1,5 @@
-import { ApiMatchCondensed } from '../../../types/api';
-import { MatchIncludesTeamsCompetition } from '../../../types/db';
+import { ApiMatchCondensed } from '../../../../types/api';
+import { MatchIncludesTeamsCompetition } from '../../../../types/db';
 
 export function parseMatches(matches: MatchIncludesTeamsCompetition[]): ApiMatchCondensed[] {
     return matches.map(match => {
@@ -14,7 +14,7 @@ export function parseMatches(matches: MatchIncludesTeamsCompetition[]): ApiMatch
                 id: match.competition.currentSeasonId
             },
             matchday: match.matchday,
-            date: match.date.toUTCString(),
+            date: match.date.toISOString(),
             homeTeam: {
                 id: match.homeTeam.id,
                 name: match.homeTeam.name,

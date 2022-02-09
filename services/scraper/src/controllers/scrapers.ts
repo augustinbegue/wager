@@ -7,7 +7,7 @@ import puppeteer from 'puppeteer';
 import { prisma } from '../../../prisma';
 import { Competition, Match, Season, Team } from '@prisma/client';
 import { CompetitionIncludesSeason, MatchIncludesTeams } from '../../../types/db';
-import { upsertMatch } from "./data";
+import { upsertMatch } from "./db";
 
 export async function scrapeData(config: ScraperConfig) {
     const baseUrl = process.env.SCRAPING_URL;

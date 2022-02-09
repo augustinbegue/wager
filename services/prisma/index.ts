@@ -1,4 +1,3 @@
-import { Match, PrismaClient } from '@prisma/client';
-import { MatchIncludesTeams } from '../types/db';
+import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient();

@@ -117,12 +117,19 @@ model Standings {
 
 // entries containing the status of the bets for each match
 model BetInfo {
-  id       Int     @id(map: "betInfos_pkey") @default(autoincrement())
-  matchId  Int     @unique
-  match    Match   @relation(fields: [matchId], references: [id])
-  opened   Boolean
-  finished Boolean
-  bets     Bet[]
+  id                      Int     @id(map: "betInfos_pkey") @default(autoincrement())
+  matchId                 Int     @unique
+  match                   Match   @relation(fields: [matchId], references: [id])
+  opened                  Boolean
+  finished                Boolean
+  bets                    Bet[]
+  resultHomeTeamOdd       Float
+  resultDrawOdd           Float
+  resultAwayTeamOdd       Float
+  resultHomeTeamOrDrawOdd Float
+  resultAwayTeamOrDrawOdd Float
+  goalsHomeTeamOdds       Float[]
+  goalsAwayTeamOdds       Float[]
 
   @@map("betInfos")
 }
@@ -146,7 +153,7 @@ model Bet {
   user      User    @relation(fields: [userId], references: [id])
   type      betType
   amount    Int
-  odd       Float
+  goals     Int?
 
   @@map("bets")
 }

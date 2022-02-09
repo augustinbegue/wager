@@ -1,4 +1,4 @@
-import { status, winner, scoreType, User } from '@prisma/client';
+import { status, winner, scoreType, User, betType } from '@prisma/client';
 import { Request, Response } from 'express';
 import { DecodedIdToken } from 'firebase-admin/lib/auth/token-verifier';
 export interface AuthenticatedRequest extends Request {
@@ -77,4 +77,10 @@ export interface ApiMatchesResponse {
 export interface ApiCompetitionParams {
     id?: number;
     name?: string;
+}
+
+export interface BetsNewBody {
+    type: betType;
+    goals?: number;
+    amount: number;
 }

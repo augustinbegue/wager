@@ -77,7 +77,7 @@ model Match {
   duration      scoreType?
   competitionId Int
   competition   Competition @relation(fields: [competitionId], references: [id])
-  BetInfos      BetInfo?
+  betInfo       BetInfo?
 
   @@map("matches")
 }

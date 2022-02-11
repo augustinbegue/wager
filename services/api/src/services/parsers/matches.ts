@@ -1,8 +1,12 @@
 import { ApiMatchCondensed } from '../../../../types/api';
-import { MatchIncludesTeamsCompetition } from '../../../../types/db';
+import { MatchIncludesAll, MatchIncludesTeamsCompetition } from '../../../../types/db';
 
-export function parseMatches(matches: MatchIncludesTeamsCompetition[]): ApiMatchCondensed[] {
+export function parseMatches(matches: MatchIncludesAll[]): ApiMatchCondensed[] {
     return matches.map(match => {
+        if (!match.betInfo) {
+            throw new Error('Match ' + match.id + ' has no bet info.');
+        }
+
         return {
             id: match.id,
             competition: {
@@ -33,7 +37,19 @@ export function parseMatches(matches: MatchIncludesTeamsCompetition[]): ApiMatch
                     homeTeam: match.homeTeamScore,
                     awayTeam: match.awayTeamScore
                 }
-            }
+            },
+            betInfo: {
+                id: match.betInfo.id,
+                opened: match.betInfo.opened,
+                finished: match.betInfo.finished,
+                resultHomeTeamOdd: match.betInfo.resultHomeTeamOdd,
+                resultDrawOdd: match.betInfo.resultDrawOdd,
+                resultAwayTeamOdd: match.betInfo.resultAwayTeamOdd,
+                resultHomeTeamOrDrawOdd: match.betInfo.resultHomeTeamOrDrawOdd,
+                resultAwayTeamOrDrawOdd: match.betInfo.resultAwayTeamOrDrawOdd,
+                goalsHomeTeamOdds: match.betInfo.goalsHomeTeamOdds,
+                goalsAwayTeamOdds: match.betInfo.goalsAwayTeamOdds
+            },
         };
     });
 }

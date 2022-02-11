@@ -1,11 +1,12 @@
 import express from 'express';
 import { matchesController } from '../controllers/matches/matchesController';
 import { weekController } from '../controllers/matches/weekController';
+import { checkAuthentication } from '../middlewares/auth';
 
 const router = express.Router();
 
-router.get('/week', weekController);
+router.get('/week', checkAuthentication, weekController);
 
-router.get('/', matchesController);
+router.get('/', checkAuthentication, matchesController);
 
 export const matchesRouter = router;

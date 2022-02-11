@@ -22,6 +22,24 @@ export async function upsertMatch(match: Match) {
                 awayTeamScore: match.awayTeamScore,
                 duration: match.duration,
                 status: match.status,
+                betInfo: {
+                    connectOrCreate: {
+                        where: {
+                            matchId: match.id
+                        },
+                        create: {
+                            opened: false,
+                            finished: false,
+                            resultHomeTeamOdd: 0,
+                            resultDrawOdd: 0,
+                            resultAwayTeamOdd: 0,
+                            resultHomeTeamOrDrawOdd: 0,
+                            resultAwayTeamOrDrawOdd: 0,
+                            goalsHomeTeamOdds: [],
+                            goalsAwayTeamOdds: [],
+                        }
+                    }
+                }
             }
         })
 
@@ -44,7 +62,8 @@ export async function upsertMatch(match: Match) {
 
         return updated;
     } else {
-        return await prisma.match.create({
+        // Create match
+        match = await prisma.match.create({
             data: {
                 date: match.date,
                 homeTeamId: match.homeTeamId,
@@ -57,6 +76,24 @@ export async function upsertMatch(match: Match) {
                 duration: match.duration,
                 competitionId: match.competitionId,
             }
-        })
+        });
+
+        // Create bet info
+        await prisma.betInfo.create({
+            data: {
+                matchId: match.id,
+                opened: false,
+                finished: false,
+                resultHomeTeamOdd: 0,
+                resultDrawOdd: 0,
+                resultAwayTeamOdd: 0,
+                resultHomeTeamOrDrawOdd: 0,
+                resultAwayTeamOrDrawOdd: 0,
+                goalsHomeTeamOdds: [],
+                goalsAwayTeamOdds: [],
+            }
+        });
+
+        return match;
     }
 }

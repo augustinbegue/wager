@@ -1,4 +1,4 @@
-import type { Competition, Match, Score, Season, Team } from '@prisma/client';
+import type { BetInfo, Competition, Match, Score, Season, Team } from '@prisma/client';
 
 export type MatchIncludesTeams = Match & {
     homeTeam: Team,
@@ -9,6 +9,10 @@ export type MatchIncludesTeamsCompetition = Match & {
     homeTeam: Team,
     awayTeam: Team,
     competition: Competition,
+}
+
+export type MatchIncludesAll = MatchIncludesTeamsCompetition & {
+    betInfo: BetInfo | null,
 }
 
 export type CompetitionIncludesSeason = Competition & {

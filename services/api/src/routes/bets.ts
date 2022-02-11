@@ -45,6 +45,8 @@ router.post("/:matchId/new", async (req, res) => {
                     goals: params.goals,
                 }
             })
+
+            res.status(200).send();
         } else {
             res.status(401).json({
                 message: "You've already betted on this match.",

@@ -51,6 +51,24 @@ export interface ApiMatchCondensed {
     };
     status: status;
     score: ApiScore;
+    betInfo: {
+        id: number;
+        opened: boolean;
+        finished: boolean;
+        resultHomeTeamOdd: number;
+        resultDrawOdd: number;
+        resultAwayTeamOdd: number;
+        resultHomeTeamOrDrawOdd: number;
+        resultAwayTeamOrDrawOdd: number;
+        goalsHomeTeamOdds: number[];
+        goalsAwayTeamOdds: number[];
+    }
+    bet?: {
+        id: number;
+        type: betType;
+        amount: number;
+        goals: number | null;
+    }
 }
 
 export interface ApiMatchesParams {

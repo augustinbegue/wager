@@ -44,7 +44,8 @@ export async function matchesController(req: Request, res: Response) {
             include: {
                 homeTeam: true,
                 awayTeam: true,
-                competition: true
+                competition: true,
+                betInfo: true,
             }
         });
 

@@ -32,6 +32,8 @@ export async function competitionByIdController(req: Request, res: Response) {
                 id: id
             },
             include: {
+                currentSeason: true,
+                pastSeasons: true,
                 ...req.path.includes('standings') ?
                     {
                         standings: {
@@ -76,7 +78,7 @@ export async function competitionByIdController(req: Request, res: Response) {
     } catch (error) {
         console.error(error);
         res.status(500).json({
-            message: error
+            message: (error as Error).message
         });
     }
 }

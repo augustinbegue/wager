@@ -56,8 +56,9 @@ export async function matchesController(req: Request, res: Response) {
             matches: parseMatches(matches),
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
-            message: error
+            message: (error as Error).message
         });
     }
 }

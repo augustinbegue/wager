@@ -28,8 +28,9 @@ export async function competitionsController(req: Request, res: Response) {
 
         res.json(competitions);
     } catch (error) {
+        console.error(error);
         res.status(500).json({
-            message: error
+            message: (error as Error).message
         });
     }
 }

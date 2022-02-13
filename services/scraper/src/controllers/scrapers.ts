@@ -373,6 +373,7 @@ export async function scrapeMatch(match: Match & { homeTeam: Team, awayTeam: Tea
             let awayTeamName = (element.querySelector(".event__participant--away") as HTMLElement)?.innerText;
 
             if (homeTeamName === match.homeTeam.name && awayTeamName === match.awayTeam.name) {
+                console.log(`Found finished match ${match.homeTeam.name} vs ${match.awayTeam.name}.`);
                 matchElement = element;
                 break;
             }

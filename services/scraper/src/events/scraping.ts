@@ -3,7 +3,7 @@ import puppeteer from 'puppeteer';
 import { prisma } from '../../../prisma'
 import { Competition, Match, Team } from '@prisma/client';
 
-import { CompetitionIncludesSeason } from '../../../types/db';
+import { CompetitionFull, CompetitionIncludesSeason } from '../../../types/db';
 import { ScrapedMatch } from "../../../types/scraper";
 
 import { scrapeLive, scrapeMatch } from "../controllers/scrapers";
@@ -55,30 +55,26 @@ export async function liveScrape() {
 
         try {
             // Get competition
-            let competition: CompetitionIncludesSeason;
-            let findUnique = await prisma.competition.findUnique({ where: { id }, include: { currentSeason: true } });
-            if (!findUnique) {
+            let competition
+                = await prisma.competition.findUnique({ where: { id }, include: { currentSeason: true, teams: true } });
+            if (!competition) {
                 throw new Error("Competition with id '" + id + "' not found.");
             }
 
-            competition = findUnique;
+            let teams = competition.teams;
 
-            // Get Teams
-            let findTeams = await prisma.competition.findUnique({ where: { id }, select: { teams: true } });
-            if (findTeams?.teams.length === 0) {
-                throw new Error("No teams found for competition with id '" + competition.id + "'.");
-            }
-            let teams = findTeams?.teams as Team[];
-
+            let tempMatches: Match[] = [];
             // Scrape live matches
             let scrapedMatches = await scrapeLive(page, baseUrl, competition.code);
-            matches = [...matches, ...parseScrapedMatches(scrapedMatches, competition, teams, 'IN_PLAY')];
+            tempMatches = parseScrapedMatches(scrapedMatches, competition, teams, 'IN_PLAY');
 
             // Update matches
-            for (let i = 0; i < matches.length; i++) {
-                console.log(`Updating match ${matches[i].id} (${matches[i].homeTeamId} vs ${matches[i].awayTeamId})`);
-                matches[i] = await upsertMatch(matches[i]);
+            for (let i = 0; i < tempMatches.length; i++) {
+                console.log(`Updating match (${tempMatches[i].homeTeamId} vs ${tempMatches[i].awayTeamId}, seasonId: ${competition.currentSeason.id})`);
+                tempMatches[i] = await upsertMatch(tempMatches[i], competition.currentSeason.id);
             }
+
+            matches = [...matches, ...tempMatches];
         } catch (error) {
             console.error(`Error scraping live matches for competition with code '${id}':`);
             console.error(error);
@@ -141,7 +137,7 @@ export async function scrapedMatchEnd(obj: { matchId: number, code: string }, sc
 
     // Update match
     let match = parseScrapedMatches([scrapedMatch], competition, teams, 'FINISHED')[0];
-    match = await upsertMatch(match);
+    match = await upsertMatch(match, competition.currentSeason.id);
 
     // Remove from live matches
     liveMatches.splice(liveMatches.indexOf(obj), 1);

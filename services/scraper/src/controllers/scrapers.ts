@@ -238,7 +238,7 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
 
     for (let i = 0; i < matches.length; i++) {
         const match = matches[i];
-        let res = upsertMatch(match);
+        let res = upsertMatch(match, competition.currentSeason.id);
 
     }
 

@@ -2,12 +2,14 @@ import { prisma } from "../../../prisma"
 import { Match } from "@prisma/client"
 import { updateStandingsForMatch } from "./standings"
 
-export async function upsertMatch(match: Match) {
+export async function upsertMatch(match: Match, seasonId: number) {
     let matchEntry = await prisma.match.findFirst({
         where: {
             homeTeamId: match.homeTeamId,
             awayTeamId: match.awayTeamId,
-            matchday: match.matchday,
+            competition: {
+                currentSeasonId: seasonId
+            },
         }
     })
 

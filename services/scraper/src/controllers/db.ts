@@ -23,13 +23,10 @@ export async function upsertMatch(match: Match) {
                 duration: match.duration,
                 status: match.status,
                 betInfo: {
-                    connectOrCreate: {
-                        where: {
-                            matchId: match.id
-                        },
+                    upsert: {
                         create: {
-                            opened: false,
-                            finished: false,
+                            opened: match.status === "SCHEDULED",
+                            finished: match.status === "FINISHED",
                             resultHomeTeamOdd: 0,
                             resultDrawOdd: 0,
                             resultAwayTeamOdd: 0,
@@ -37,6 +34,10 @@ export async function upsertMatch(match: Match) {
                             resultAwayTeamOrDrawOdd: 0,
                             goalsHomeTeamOdds: [],
                             goalsAwayTeamOdds: [],
+                        },
+                        update: {
+                            opened: match.status === "SCHEDULED",
+                            finished: match.status === "FINISHED",
                         }
                     }
                 }
@@ -52,6 +53,7 @@ export async function upsertMatch(match: Match) {
 
         // Match finished
         if (matchEntry.status === "IN_PLAY" && match.status === "FINISHED") {
+            console.log(`Updated finished match: ${matchEntry.id}`);
             // Update standings
             updateStandingsForMatch(match);
 

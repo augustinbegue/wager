@@ -10,37 +10,14 @@ export async function requireAuthentication(req: Request, res: Response, next: F
         return res.status(401).send({ message: "Unauthorized: Missing token." });
     }
 
-    const token = authorization.split(" ")[1];
-
     try {
-        const decodedToken = await auth().verifyIdToken(token, true);
-
-        const user = await prisma.user.upsert({
-            where: {
-                uid: decodedToken.uid,
-            },
-            create: {
-                uid: decodedToken.uid,
-                email: decodedToken.email as string,
-                name: decodedToken.name,
-                photoUrl: decodedToken.picture,
-            },
-            update: {
-                uid: decodedToken.uid,
-                email: decodedToken.email,
-                name: decodedToken.name,
-                photoUrl: decodedToken.picture,
-            },
-        });
-
-        (req as AuthenticatedRequest).decoded = decodedToken;
-        (req as AuthenticatedRequest).user = user;
-
-        return next();
+        await checkToken(authorization, req);
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return res.status(401).send({ message: "Unauthorized: Missing token." });
     }
+
+    return next();
 }
 
 export async function checkAuthentication(req: Request, res: Response, next: Function) {
@@ -50,34 +27,39 @@ export async function checkAuthentication(req: Request, res: Response, next: Fun
         return next();
     }
 
+    try {
+        await checkToken(authorization, req);
+    } catch (error) {
+        console.log(error);
+    }
+
+    return next();
+}
+
+async function checkToken(authorization: string, req: Request) {
     const token = authorization.split(" ")[1];
 
-    try {
-        const decodedToken = await auth().verifyIdToken(token, true);
+    const decodedToken = await auth().verifyIdToken(token, true);
 
-        const user = await prisma.user.upsert({
-            where: {
-                uid: decodedToken.uid,
-            },
-            create: {
-                uid: decodedToken.uid,
-                email: decodedToken.email as string,
-                name: decodedToken.name,
-                photoUrl: decodedToken.picture,
-            },
-            update: {
-                uid: decodedToken.uid,
-                email: decodedToken.email,
-                name: decodedToken.name,
-                photoUrl: decodedToken.picture,
-            },
-        });
+    const user = await prisma.user.upsert({
+        where: {
+            uid: decodedToken.uid,
+        },
+        create: {
+            uid: decodedToken.uid,
+            email: decodedToken.email as string,
+            name: decodedToken.name,
+            photoUrl: decodedToken.picture,
+            balance: 1000,
+        },
+        update: {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            name: decodedToken.name,
+            photoUrl: decodedToken.picture,
+        },
+    });
 
-        (req as AuthenticatedRequest).decoded = decodedToken;
-        (req as AuthenticatedRequest).user = user;
-
-        return next();
-    } catch (error) {
-        console.error(error);
-    }
+    (req as AuthenticatedRequest).decoded = decodedToken;
+    (req as AuthenticatedRequest).user = user;
 }

@@ -12,6 +12,7 @@ export function parseMatchesParams(query: any, dateMendatory = true): ApiMatches
         team: query.team ? parseInt(query.team) : undefined,
         homeTeam: query.homeTeam ? parseInt(query.homeTeam) : undefined,
         awayTeam: query.awayTeam ? parseInt(query.awayTeam) : undefined,
+        competition: query.competition ? parseInt(query.competition) : undefined,
         status: query.status ? query.status : undefined,
         limit: query.limit ? parseInt(query.limit) : 10,
         offset: query.offset ? parseInt(query.offset) : 0

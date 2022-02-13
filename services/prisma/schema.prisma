@@ -166,6 +166,7 @@ model User {
   photoUrl String?
   name     String?
   bets     Bet[]
+  balance  Float
 
   @@map("users")
 }

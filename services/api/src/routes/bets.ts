@@ -21,6 +21,27 @@ router.post("/:matchId/new", async (req, res) => {
 
     let params = req.body as BetsNewBody;
 
+    if (!params.type) {
+        return res.status(400).send({ message: "Missing bet type." });
+    }
+
+    if ((params.type === "GOALS_AWAY_TEAM" || params.type === "GOALS_HOME_TEAM") && !params.goals) {
+        return res.status(400).send({ message: "Missing goals." });
+    }
+
+    if (!params.amount || params.amount <= 0) {
+        return res.status(400).json({
+            error: "Invalid amount",
+        });
+    }
+
+    if (params.amount > authReq.user.balance) {
+        return res.status(400).json({
+            error: "Insufficient balance",
+        });
+    }
+
+
     let betInfo = await prisma.betInfo.findUnique({
         where: {
             matchId: matchId,

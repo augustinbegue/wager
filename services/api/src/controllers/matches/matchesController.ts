@@ -27,12 +27,9 @@ export async function matchesController(req: Request, res: Response) {
                     lte: params.endDate
                 },
                 ...teamFilter,
-                homeTeam: {
-                    id: params.homeTeam
-                },
-                awayTeam: {
-                    id: params.awayTeam
-                },
+                homeTeamId: params.homeTeam,
+                awayTeamId: params.awayTeam,
+                competitionId: params.competition,
                 status: params.status,
                 matchday: params.matchday
             },

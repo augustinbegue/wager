@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
 import 'package:wager_app/styles/text_styles.dart';
@@ -38,13 +39,13 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
             widget.match.score.fullTime.homeTeam.toString(),
             style: widget.match.score.winner == ApiWinner.HOME_TEAM
                 ? boldSmall
-                : Small,
+                : blackSmall,
           ),
           Text(
             widget.match.score.fullTime.awayTeam.toString(),
             style: widget.match.score.winner == ApiWinner.AWAY_TEAM
                 ? boldSmall
-                : Small,
+                : blackSmall,
           ),
         ],
       ),
@@ -76,13 +77,18 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                           Padding(
                             padding: const EdgeInsets.all(4),
                             child: Row(children: <Widget>[
-                              SizedBox(
-                                height: 20,
-                                child: Image.network(Uri(
-                                  scheme: 'https',
+                              CachedNetworkImage(
+                                placeholder: (context, url) => const Padding(
+                                  padding: EdgeInsets.all(2),
+                                  child: CircularProgressIndicator(),
+                                ),
+                                imageUrl: Uri(
+                                  scheme: 'http',
                                   host: Api.endpoint,
                                   path: widget.match.homeTeam.crestUrl,
-                                ).toString()),
+                                ).toString(),
+                                width: 20,
+                                height: 20,
                               ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
@@ -91,7 +97,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                   style: widget.match.score.winner ==
                                           ApiWinner.HOME_TEAM
                                       ? boldSmall
-                                      : Small,
+                                      : blackSmall,
                                 ),
                               )
                             ]),
@@ -99,13 +105,18 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                           Padding(
                             padding: const EdgeInsets.all(4),
                             child: Row(children: <Widget>[
-                              SizedBox(
-                                height: 20,
-                                child: Image.network(Uri(
-                                  scheme: 'https',
+                              CachedNetworkImage(
+                                placeholder: (context, url) => const Padding(
+                                  padding: EdgeInsets.all(2),
+                                  child: CircularProgressIndicator(),
+                                ),
+                                imageUrl: Uri(
+                                  scheme: 'http',
                                   host: Api.endpoint,
                                   path: widget.match.awayTeam.crestUrl,
-                                ).toString()),
+                                ).toString(),
+                                width: 20,
+                                height: 20,
                               ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
@@ -114,7 +125,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                   style: widget.match.score.winner ==
                                           ApiWinner.AWAY_TEAM
                                       ? boldSmall
-                                      : Small,
+                                      : blackSmall,
                                 ),
                               )
                             ]),

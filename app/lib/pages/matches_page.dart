@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
+import 'package:wager_app/widgets/competitions/competition_display_small.dart';
 import 'package:wager_app/widgets/matches/match_week_list.dart';
 
 class MatchesPage extends StatefulWidget {
@@ -11,11 +12,13 @@ class MatchesPage extends StatefulWidget {
 
 class _MatchesPageState extends State<MatchesPage> {
   late Future<WeekMatchesList> matches;
+  late Future<List<ApiCompetition>> competitions;
 
   @override
   void initState() {
     super.initState();
-    matches = Api.fetchWeekMatchesList();
+    matches = Api.getWeekMatchesList();
+    competitions = Api.getCompetitions();
   }
 
   @override
@@ -30,37 +33,52 @@ class _MatchesPageState extends State<MatchesPage> {
                 text: 'Favorites',
               ),
               Tab(
-                text: 'Day',
+                text: 'Week',
               ),
               Tab(
-                text: 'Competition',
+                text: 'Competitions',
               )
             ]),
           ),
           body: TabBarView(
             children: <Widget>[
-              Center(
-                child: FutureBuilder<WeekMatchesList>(
-                  future: matches,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return MatchWeekList(
-                        weekMatchesList: snapshot.data!,
-                      );
-                    } else if (snapshot.hasError) {
-                      return Text("${snapshot.error}");
-                    }
+              const Center(
+                child: Text("Favorites tab"),
+              ),
+              FutureBuilder<WeekMatchesList>(
+                future: matches,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return MatchWeekList(
+                      weekMatchesList: snapshot.data!,
+                    );
+                  } else if (snapshot.hasError) {
+                    return Text("${snapshot.error}");
+                  }
 
-                    return CircularProgressIndicator();
-                  },
-                ),
+                  return const CircularProgressIndicator();
+                },
               ),
               Center(
-                child: Text("Matches of the day tab"),
-              ),
-              Center(
-                child: Text("Matches by competition"),
-              ),
+                  child: FutureBuilder<List<ApiCompetition>>(
+                future: competitions,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return ListView.builder(
+                      itemCount: snapshot.data?.length,
+                      itemBuilder: (context, index) {
+                        return CompetitionWidgetSmall(
+                          competition: snapshot.data![index],
+                        );
+                      },
+                    );
+                  } else if (snapshot.hasError) {
+                    return Text("${snapshot.error}");
+                  }
+
+                  return CircularProgressIndicator();
+                },
+              )),
             ],
           ),
         ));

@@ -20,6 +20,10 @@ class WagerApp extends StatelessWidget {
 
   final _appRouter = AppRouter();
 
+  final lightTheme = ColorScheme.fromSeed(seedColor: Colors.blue);
+  final darkTheme =
+      ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark);
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -37,8 +41,15 @@ class WagerApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Wager',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          colorScheme: lightTheme,
+          useMaterial3: true,
         ),
+        darkTheme: ThemeData(
+          colorScheme: darkTheme,
+          useMaterial3: true,
+        ),
+        themeMode: ThemeMode.system,
+        debugShowCheckedModeBanner: false,
         home: MaterialApp.router(
           routerDelegate: _appRouter.delegate(),
           routeInformationParser: _appRouter.defaultRouteParser(),

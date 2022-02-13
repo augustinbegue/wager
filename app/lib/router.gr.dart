@@ -11,17 +11,18 @@
 // ignore_for_file: type=lint
 
 import 'package:auto_route/auto_route.dart' as _i2;
-import 'package:flutter/material.dart' as _i8;
+import 'package:flutter/material.dart' as _i9;
 
 import 'pages/default_page.dart' as _i1;
-import 'pages/history_page.dart' as _i6;
+import 'pages/history_page.dart' as _i7;
 import 'pages/home_page.dart' as _i3;
+import 'pages/matches/competition_page.dart' as _i6;
 import 'pages/matches_page.dart' as _i5;
-import 'pages/profile_page.dart' as _i7;
+import 'pages/profile_page.dart' as _i8;
 import 'pages/ranking_page.dart' as _i4;
 
 class AppRouter extends _i2.RootStackRouter {
-  AppRouter([_i8.GlobalKey<_i8.NavigatorState>? navigatorKey])
+  AppRouter([_i9.GlobalKey<_i9.NavigatorState>? navigatorKey])
       : super(navigatorKey);
 
   @override
@@ -62,13 +63,20 @@ class AppRouter extends _i2.RootStackRouter {
       return _i2.MaterialPageX<dynamic>(
           routeData: routeData, child: const _i5.MatchesPage());
     },
+    CompetitionRoute.name: (routeData) {
+      final args = routeData.argsAs<CompetitionRouteArgs>();
+      return _i2.MaterialPageX<dynamic>(
+          routeData: routeData,
+          child: _i6.CompetitionPage(
+              key: args.key, competitionId: args.competitionId));
+    },
     HistoryRoute.name: (routeData) {
       return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i6.HistoryPage());
+          routeData: routeData, child: const _i7.HistoryPage());
     },
     ProfileRoute.name: (routeData) {
       return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i7.ProfilePage());
+          routeData: routeData, child: const _i8.ProfilePage());
     }
   };
 
@@ -94,7 +102,10 @@ class AppRouter extends _i2.RootStackRouter {
               parent: DefaultRoute.name,
               children: [
                 _i2.RouteConfig(MatchesRoute.name,
-                    path: '', parent: MatchesRouter.name)
+                    path: '', parent: MatchesRouter.name),
+                _i2.RouteConfig(CompetitionRoute.name,
+                    path: 'competition/:competitionId',
+                    parent: MatchesRouter.name)
               ]),
           _i2.RouteConfig(HistoryRouter.name,
               path: 'history',
@@ -193,7 +204,31 @@ class MatchesRoute extends _i2.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i6.HistoryPage]
+/// [_i6.CompetitionPage]
+class CompetitionRoute extends _i2.PageRouteInfo<CompetitionRouteArgs> {
+  CompetitionRoute({_i9.Key? key, required int competitionId})
+      : super(CompetitionRoute.name,
+            path: 'competition/:competitionId',
+            args: CompetitionRouteArgs(key: key, competitionId: competitionId));
+
+  static const String name = 'CompetitionRoute';
+}
+
+class CompetitionRouteArgs {
+  const CompetitionRouteArgs({this.key, required this.competitionId});
+
+  final _i9.Key? key;
+
+  final int competitionId;
+
+  @override
+  String toString() {
+    return 'CompetitionRouteArgs{key: $key, competitionId: $competitionId}';
+  }
+}
+
+/// generated route for
+/// [_i7.HistoryPage]
 class HistoryRoute extends _i2.PageRouteInfo<void> {
   const HistoryRoute() : super(HistoryRoute.name, path: '');
 
@@ -201,7 +236,7 @@ class HistoryRoute extends _i2.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i7.ProfilePage]
+/// [_i8.ProfilePage]
 class ProfileRoute extends _i2.PageRouteInfo<void> {
   const ProfileRoute() : super(ProfileRoute.name, path: '');
 

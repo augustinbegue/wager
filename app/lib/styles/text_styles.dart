@@ -25,4 +25,6 @@ const TextStyle blackLg =
 const TextStyle boldSmall =
     TextStyle(fontSize: 14, color: bodyTextColor, fontWeight: FontWeight.bold);
 
-const TextStyle Small = TextStyle(fontSize: 14, color: bodyTextColor);
+const TextStyle blackSmall = TextStyle(fontSize: 14, color: bodyTextColor);
+
+const TextStyle whiteSmall = TextStyle(fontSize: 14, color: Colors.white);

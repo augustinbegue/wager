@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+
+import '../utilities/date_time_utils.dart';
 
 enum ApiStatus {
   SCHEDULED,
@@ -88,6 +91,84 @@ class ApiTeamCondensed {
   }
 }
 
+class ApiBetInfo {
+  final int id;
+  final bool opened;
+  final bool finished;
+  final double resultHomeTeamOdd;
+  final double resultDrawOdd;
+  final double resultAwayTeamOdd;
+  final double resultHomeTeamOrDrawOdd;
+  final double resultAwayTeamOrDrawOdd;
+  final List<double> goalsHomeTeamOdds;
+  final List<double> goalsAwayTeamOdds;
+
+  const ApiBetInfo(
+      {required this.id,
+      required this.opened,
+      required this.finished,
+      required this.resultHomeTeamOdd,
+      required this.resultDrawOdd,
+      required this.resultAwayTeamOdd,
+      required this.resultHomeTeamOrDrawOdd,
+      required this.resultAwayTeamOrDrawOdd,
+      required this.goalsHomeTeamOdds,
+      required this.goalsAwayTeamOdds});
+
+  factory ApiBetInfo.fromJson(Map<String, dynamic> json) {
+    return ApiBetInfo(
+        id: json['id'],
+        opened: json['opened'],
+        finished: json['finished'],
+        resultHomeTeamOdd: json['resultHomeTeamOdd'].toDouble(),
+        resultDrawOdd: json['resultDrawOdd'].toDouble(),
+        resultAwayTeamOdd: json['resultAwayTeamOdd'].toDouble(),
+        resultHomeTeamOrDrawOdd: json['resultHomeTeamOrDrawOdd'].toDouble(),
+        resultAwayTeamOrDrawOdd: json['resultAwayTeamOrDrawOdd'].toDouble(),
+        goalsHomeTeamOdds: json['goalsHomeTeamOdds'].cast<double>(),
+        goalsAwayTeamOdds: json['goalsAwayTeamOdds'].cast<double>());
+  }
+}
+
+enum ApiBetType {
+  RESULT_HOME_TEAM,
+  RESULT_AWAY_TEAM,
+  RESULT_HOME_TEAM_OR_DRAW,
+  RESULT_AWAY_TEAM_OR_DRAW,
+  RESULT_DRAW,
+  GOALS_HOME_TEAM,
+  GOALS_AWAY_TEAM
+}
+
+class ApiBet {
+  final int id;
+  final ApiBetType type;
+  final double amount;
+  final int? goals;
+
+  const ApiBet(
+      {required this.id,
+      required this.type,
+      required this.amount,
+      required this.goals});
+
+  factory ApiBet.fromJson(Map<String, dynamic> json) {
+    ApiBetType type = ApiBetType.RESULT_HOME_TEAM;
+    for (var element in ApiBetType.values) {
+      final String elementName = element.toString().split('.')[1];
+      if (elementName == json['status']) {
+        type = element;
+      }
+    }
+
+    return ApiBet(
+        id: json['id'],
+        type: type,
+        amount: json['amount'],
+        goals: json['goals']);
+  }
+}
+
 class ApiMatchCondensed {
   final int id;
   final ApiCompetitionCondensed competition;
@@ -98,6 +179,8 @@ class ApiMatchCondensed {
   final ApiTeamCondensed awayTeam;
   final ApiStatus status;
   final ApiScore score;
+  final ApiBetInfo betInfo;
+  final ApiBet? bet;
 
   const ApiMatchCondensed({
     required this.id,
@@ -109,6 +192,8 @@ class ApiMatchCondensed {
     required this.awayTeam,
     required this.status,
     required this.score,
+    required this.betInfo,
+    required this.bet,
   });
 
   factory ApiMatchCondensed.fromJson(Map<String, dynamic> json) {
@@ -121,15 +206,18 @@ class ApiMatchCondensed {
     }
 
     return ApiMatchCondensed(
-        id: json['id'],
-        competition: ApiCompetitionCondensed.fromJson(json['competition']),
-        season: ApiSeasonCondensed.fromJson(json['season']),
-        matchday: json['matchday'],
-        date: DateTime.parse(json['date']).toLocal(),
-        homeTeam: ApiTeamCondensed.fromJson(json['homeTeam']),
-        awayTeam: ApiTeamCondensed.fromJson(json['awayTeam']),
-        score: ApiScore.fromJson(json['score']),
-        status: status);
+      id: json['id'],
+      competition: ApiCompetitionCondensed.fromJson(json['competition']),
+      season: ApiSeasonCondensed.fromJson(json['season']),
+      matchday: json['matchday'],
+      date: DateTime.parse(json['date']).toLocal(),
+      homeTeam: ApiTeamCondensed.fromJson(json['homeTeam']),
+      awayTeam: ApiTeamCondensed.fromJson(json['awayTeam']),
+      score: ApiScore.fromJson(json['score']),
+      status: status,
+      betInfo: ApiBetInfo.fromJson(json['betInfo']),
+      bet: json['bet'] != null ? ApiBet.fromJson(json['bet']) : null,
+    );
   }
 }
 
@@ -144,8 +232,9 @@ class CompetitionsMatchesList {
 class DayMatchesList {
   final DateTime date;
   final List<CompetitionsMatchesList> competitions;
+  bool isExpanded = true;
 
-  const DayMatchesList({required this.date, required this.competitions});
+  DayMatchesList({required this.date, required this.competitions});
 }
 
 class WeekMatchesList {
@@ -154,12 +243,127 @@ class WeekMatchesList {
   const WeekMatchesList({required this.days});
 }
 
-class Api {
-  static const String endpoint = 'cd71-73-202-235-133.ngrok.io';
+class ApiSeason {
+  final int id;
+  final DateTime startDate;
+  final DateTime endDate;
+  final int currentMatchday;
+  final int? winnerId;
+  final int? pastCompetitionId;
 
-  static Future<WeekMatchesList> fetchWeekMatchesList() async {
-    final response = await http
-        .get(Uri(scheme: 'http', host: endpoint, path: '/matches/week'));
+  const ApiSeason(
+      {required this.id,
+      required this.startDate,
+      required this.endDate,
+      required this.currentMatchday,
+      required this.winnerId,
+      required this.pastCompetitionId});
+
+  factory ApiSeason.fromJson(Map<String, dynamic> json) {
+    return ApiSeason(
+        id: json['id'],
+        startDate: DateTime.parse(json['startDate']).toLocal(),
+        endDate: DateTime.parse(json['endDate']).toLocal(),
+        currentMatchday: json['currentMatchday'],
+        winnerId: json['winnerId'],
+        pastCompetitionId: json['pastCompetitionId']);
+  }
+}
+
+class ApiStandingsEntry {
+  final int id;
+  final int teamId;
+  final int playedGames;
+  final int won;
+  final int draw;
+  final int lost;
+  final int points;
+  final int goalsFor;
+  final int goalsAgainst;
+  final int competitionId;
+  final int seasonId;
+  final ApiTeamCondensed team;
+
+  const ApiStandingsEntry(
+      {required this.id,
+      required this.teamId,
+      required this.playedGames,
+      required this.won,
+      required this.draw,
+      required this.lost,
+      required this.points,
+      required this.goalsFor,
+      required this.goalsAgainst,
+      required this.competitionId,
+      required this.seasonId,
+      required this.team});
+
+  factory ApiStandingsEntry.fromJson(Map<String, dynamic> json) {
+    return ApiStandingsEntry(
+        id: json['id'],
+        teamId: json['teamId'],
+        playedGames: json['playedGames'],
+        won: json['won'],
+        draw: json['draw'],
+        lost: json['lost'],
+        points: json['points'],
+        goalsFor: json['goalsFor'],
+        goalsAgainst: json['goalsAgainst'],
+        competitionId: json['competitionId'],
+        seasonId: json['seasonId'],
+        team: ApiTeamCondensed.fromJson(json['team']));
+  }
+}
+
+class ApiCompetition {
+  final int id;
+  final String name;
+  final String emblemUrl;
+  final ApiSeason currentSeason;
+  final List<ApiStandingsEntry>? standings;
+
+  const ApiCompetition(
+      {required this.id,
+      required this.name,
+      required this.emblemUrl,
+      required this.currentSeason,
+      this.standings});
+
+  factory ApiCompetition.fromJson(Map<String, dynamic> json) {
+    return ApiCompetition(
+      id: json['id'],
+      name: json['name'],
+      emblemUrl: json['emblemUrl'],
+      currentSeason: ApiSeason.fromJson(json['currentSeason']),
+      standings: json['standings'] != null
+          ? List<ApiStandingsEntry>.from(
+              json['standings'].map((x) => ApiStandingsEntry.fromJson(x)))
+          : null,
+    );
+  }
+}
+
+class Api {
+  static const String endpoint = '4154-73-202-235-133.ngrok.io';
+
+  static Future<Map<String, String>> getAuthHeader() async {
+    String? token;
+
+    token = await FirebaseAuth.instance.currentUser?.getIdToken();
+
+    if (token != null) {
+      return {'Authorization': 'Bearer $token'};
+    } else {
+      return {};
+    }
+  }
+
+  static Future<WeekMatchesList> getWeekMatchesList() async {
+    final response = await http.get(
+        Uri(scheme: 'http', host: endpoint, path: '/matches/week'),
+        headers: {
+          ...await getAuthHeader(),
+        });
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as List<dynamic>;
@@ -221,6 +425,78 @@ class Api {
       return WeekMatchesList(days: days);
     } else {
       throw Exception('Failed to load matches');
+    }
+  }
+
+  static Future<List<ApiMatchCondensed>> getMatches(
+      DateTime startDate, DateTime endDate,
+      [int? competitionId, int? seasonId, int? teamId]) async {
+    Map<String, dynamic> competitionParam =
+        competitionId != null ? {'competition': competitionId.toString()} : {};
+    Map<String, dynamic> seasonParam =
+        seasonId != null ? {'season': seasonId.toString()} : {};
+    Map<String, dynamic> teamParam =
+        teamId != null ? {'team': teamId.toString()} : {};
+
+    Map<String, dynamic> params = {
+      'startDate': DateTimeUtils.formatDateToParam(startDate),
+      'endDate': DateTimeUtils.formatDateToParam(endDate),
+      ...competitionParam,
+      ...seasonParam,
+      ...teamParam,
+    };
+
+    Uri uri = Uri(
+        scheme: 'http',
+        host: endpoint,
+        path: '/matches',
+        queryParameters: params);
+
+    final response = await http.get(uri, headers: {
+      ...await getAuthHeader(),
+    });
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+
+      List<dynamic> matches = json['matches'];
+
+      return matches
+          .map((e) => ApiMatchCondensed.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load matches.');
+    }
+  }
+
+  static Future<List<ApiCompetition>> getCompetitions() async {
+    final response = await http
+        .get(Uri(scheme: 'http', host: endpoint, path: '/competitions'));
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+
+      return json
+          .map((e) => ApiCompetition.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load competitions.');
+    }
+  }
+
+  static Future<ApiCompetition> getCompetitionById(int id,
+      [bool standings = false]) async {
+    final response = await http.get(Uri(
+        scheme: 'http',
+        host: endpoint,
+        path: '/competitions/$id/${standings ? 'standings' : ''}'));
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+      return ApiCompetition.fromJson(json);
+    } else {
+      throw Exception('Failed to load competition.');
     }
   }
 }

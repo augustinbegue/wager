@@ -233,10 +233,18 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
         where: {
             competition: {
                 currentSeasonId: competition.currentSeason.id,
-            }
+            },
+            OR: [
+                {
+                    status: 'FINISHED',
+                },
+                {
+                    status: 'IN_PLAY',
+                }
+            ]
         },
         orderBy: {
-            date: 'desc',
+            matchday: 'desc',
         },
         select: {
             matchday: true,
@@ -253,7 +261,8 @@ export async function scrapePath(browser: puppeteer.Browser, config: ScraperConf
         data: {
             currentMatchday: latestMatch ? latestMatch.matchday : 1,
         }
-    })
+    });
+    console.log(`Updated competition with code '${competition.code}' to matchday ${competition.currentSeason.currentMatchday}`);
 
     // Scrape teams in the competition
     if (config.updateTeams) {

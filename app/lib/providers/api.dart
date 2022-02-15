@@ -344,7 +344,7 @@ class ApiCompetition {
 }
 
 class Api {
-  static const String endpoint = '192.168.1.105';
+  static const String endpoint = '192.168.39.28'; // '192.168.1.105';
 
   static const int port = 80;
 
@@ -431,21 +431,30 @@ class Api {
   }
 
   static Future<List<ApiMatchCondensed>> getMatches(
-      DateTime startDate, DateTime endDate,
-      [int? competitionId, int? seasonId, int? teamId]) async {
+      DateTime? startDate, DateTime? endDate,
+      [int? competitionId, int? matchday, int? seasonId, int? teamId]) async {
+    Map<String, dynamic> startDateParam = startDate != null
+        ? {'startDate': DateTimeUtils.formatDateToParam(startDate)}
+        : {};
+    Map<String, dynamic> endDateParam = endDate != null
+        ? {'endDate': DateTimeUtils.formatDateToParam(endDate)}
+        : {};
     Map<String, dynamic> competitionParam =
         competitionId != null ? {'competition': competitionId.toString()} : {};
     Map<String, dynamic> seasonParam =
         seasonId != null ? {'season': seasonId.toString()} : {};
     Map<String, dynamic> teamParam =
         teamId != null ? {'team': teamId.toString()} : {};
+    Map<String, dynamic> matchdayParam =
+        matchday != null ? {'matchday': matchday.toString()} : {};
 
     Map<String, dynamic> params = {
-      'startDate': DateTimeUtils.formatDateToParam(startDate),
-      'endDate': DateTimeUtils.formatDateToParam(endDate),
+      ...startDateParam,
+      ...endDateParam,
       ...competitionParam,
       ...seasonParam,
       ...teamParam,
+      ...matchdayParam
     };
 
     Uri uri = Uri(

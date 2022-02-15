@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
 import 'package:wager_app/widgets/competitions/competition_standings.dart';
-import 'package:wager_app/widgets/matches/match_list.dart';
+import 'package:wager_app/widgets/matches/match_list_matchday.dart';
 
 class CompetitionPage extends StatefulWidget {
   const CompetitionPage({
@@ -18,17 +18,12 @@ class CompetitionPage extends StatefulWidget {
 }
 
 class _CompetitionPageState extends State<CompetitionPage> {
-  DateTime startDate = DateTime.now().subtract(const Duration(days: 1));
-  DateTime endDate = DateTime.now().add(const Duration(days: 6));
-
   late Future<ApiCompetition> competition;
-  late Future<List<ApiMatchCondensed>> matches;
 
   @override
   void initState() {
     super.initState();
     competition = Api.getCompetitionById(widget.competitionId, true);
-    matches = Api.getMatches(startDate, endDate, widget.competitionId);
   }
 
   @override
@@ -92,23 +87,10 @@ class _CompetitionPageState extends State<CompetitionPage> {
               ),
               body: TabBarView(
                 children: [
-                  FutureBuilder<List<ApiMatchCondensed>>(
-                    future: matches,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return MatchList(
-                          matches: snapshot.data as List<ApiMatchCondensed>,
-                        );
-                      } else if (snapshot.hasError) {
-                        return Center(
-                          child: Text('Error: ${snapshot.error}'),
-                        );
-                      } else {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                    },
+                  MatchListMatchday(
+                    competitionId: widget.competitionId,
+                    currentMatchday:
+                        snapshot.data?.currentSeason.currentMatchday ?? 1,
                   ),
                   CompetitionStandings(
                     competition: snapshot.data as ApiCompetition,

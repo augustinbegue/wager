@@ -1,4 +1,3 @@
-import express, { Request, Response } from "express";
-import { auth } from "firebase-admin";
+import express from "express";
 
 const router = express.Router();

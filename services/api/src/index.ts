@@ -61,6 +61,6 @@ app.get("*", (req, res) => {
     res.status(404).json({ message: "What are you looking for ?" });
 });
 
-app.listen(3000, '0.0.0.0', () => {
-    console.log("Listening on port 3000");
+app.listen(80, '0.0.0.0', () => {
+    console.log("Listening ...");
 });

@@ -1,8 +1,9 @@
 import { prisma } from "../../../prisma"
 import { Match } from "@prisma/client"
 import { updateStandingsForMatch } from "./standings"
+import { EventsController } from "../events/events-controller"
 
-export async function upsertMatch(match: Match, seasonId: number) {
+export async function upsertMatch(match: Match, seasonId: number, eventsController?: EventsController) {
     let matchEntry = await prisma.match.findFirst({
         where: {
             homeTeamId: match.homeTeamId,
@@ -45,6 +46,23 @@ export async function upsertMatch(match: Match, seasonId: number) {
                 }
             }
         })
+
+        // Check for match data changes
+        if (match.status === "IN_PLAY") {
+            if (match.homeTeamScore !== matchEntry.homeTeamScore) {
+                // Home team score changed
+                eventsController?.emitter.emit("match-update", matchEntry.id, "home-team-score", match.homeTeamScore as number);
+
+                // TODO: Send notifications
+            }
+
+            if (match.awayTeamScore !== matchEntry.awayTeamScore) {
+                // Away team score changed
+                eventsController?.emitter.emit("match-update", matchEntry.id, "away-team-score", match.awayTeamScore as number);
+
+                // TODO: Send notifications
+            }
+        }
 
         // Match started
         if (matchEntry.status === "SCHEDULED" && match.status === "IN_PLAY") {

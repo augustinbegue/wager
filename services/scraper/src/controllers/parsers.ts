@@ -7,66 +7,70 @@ const scoreStatuses: status[] = ['LIVE', 'IN_PLAY', 'FINISHED', 'PAUSED'];
 const matchDayStatuses: status[] = ['FINISHED', 'SCHEDULED'];
 
 export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition: CompetitionIncludesSeason, teams: Team[], status: status = 'FINISHED'): Match[] {
-    return scrapedMatches.map((scrapedMatch) => {
-        let fullTime = {
-            homeTeam: scrapedMatch.homeScoreFullStr ? parseInt(scrapedMatch.homeScoreFullStr) : null,
-            awayTeam: scrapedMatch.awayScoreFullStr ? parseInt(scrapedMatch.awayScoreFullStr) : null,
-        }
-        let duration: scoreType = scoreType.FULL_TIME;
-
-        let date = new Date();
-
-        // Parse date
-        if (scrapedMatch.elapsedMinutes) {
-            if (scrapedMatch.elapsedMinutes.startsWith('Half Time')) {
-                status = 'PAUSED';
-                scrapedMatch.elapsedMinutes = '45';
-            } else if (isNaN(parseInt(scrapedMatch.elapsedMinutes))) {
-                scrapedMatch.elapsedMinutes = '90';
+    try {
+        return scrapedMatches.map((scrapedMatch) => {
+            let fullTime = {
+                homeTeam: scrapedMatch.homeScoreFullStr ? parseInt(scrapedMatch.homeScoreFullStr) : null,
+                awayTeam: scrapedMatch.awayScoreFullStr ? parseInt(scrapedMatch.awayScoreFullStr) : null,
             }
-            date = new Date(date.getTime() - (parseInt(scrapedMatch.elapsedMinutes) * 60000));
-            date.setSeconds(0, 0);
-        } else if (scrapedMatch.timeStr) {
-            let [day, month] = scrapedMatch.timeStr.split(" ")[0].split(".");
+            let duration: scoreType = scoreType.FULL_TIME;
 
-            let year = month > '12' ? moment(competition.currentSeason.startDate).year() : moment(competition.currentSeason.endDate).year();
+            let date = new Date();
 
-            date.setFullYear(
-                year,
-                parseInt(month) - 1,
-                parseInt(day)
-            );
-            let [hours, minutes] = scrapedMatch.timeStr.split(" ")[1].split(":");
-            date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        }
+            // Parse date
+            if (scrapedMatch.elapsedMinutes) {
+                if (scrapedMatch.elapsedMinutes.startsWith('Half Time')) {
+                    status = 'PAUSED';
+                    scrapedMatch.elapsedMinutes = '45';
+                } else if (isNaN(parseInt(scrapedMatch.elapsedMinutes))) {
+                    scrapedMatch.elapsedMinutes = '90';
+                }
+                date = new Date(date.getTime() - (parseInt(scrapedMatch.elapsedMinutes) * 60000));
+                date.setSeconds(0, 0);
+            } else if (scrapedMatch.timeStr) {
+                let [day, month] = scrapedMatch.timeStr.split(" ")[0].split(".");
 
-        // Parse Winner
-        let matchWinner: winner | null = fullTime.homeTeam != null && fullTime.awayTeam != null ?
-            fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM'
-            : null;
+                let year = month > '12' ? moment(competition.currentSeason.startDate).year() : moment(competition.currentSeason.endDate).year();
 
-        let homeTeam = teams.find((team) => team.name === scrapedMatch.homeTeamName);
-        let awayTeam = teams.find((team) => team.name === scrapedMatch.awayTeamName);
+                date.setFullYear(
+                    year,
+                    parseInt(month) - 1,
+                    parseInt(day)
+                );
+                let [hours, minutes] = scrapedMatch.timeStr.split(" ")[1].split(":");
+                date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            }
 
-        if (!homeTeam || !awayTeam) {
-            throw new Error("team not found: " + scrapedMatch.homeTeamName || scrapedMatch.awayTeamName);
-        }
+            // Parse Winner
+            let matchWinner: winner | null = fullTime.homeTeam != null && fullTime.awayTeam != null ?
+                fullTime.homeTeam > fullTime.awayTeam ? 'HOME_TEAM' : fullTime.homeTeam === fullTime.awayTeam ? 'DRAW' : 'AWAY_TEAM'
+                : null;
 
-        return {
-            id: 0,
-            date: date,
-            homeTeamId: homeTeam.id,
-            awayTeamId: awayTeam.id,
-            status: status,
-            matchday: (matchDayStatuses.includes(status) ? scrapedMatch.currentMatchday : competition.currentSeason.currentMatchday) || 1,
-            winner: matchWinner,
-            homeTeamScore: fullTime.homeTeam,
-            awayTeamScore: fullTime.awayTeam,
-            duration: duration,
-            competitionId: competition.id,
-            competition: competition
-        };
-    });
+            let homeTeam = teams.find((team) => team.name === scrapedMatch.homeTeamName);
+            let awayTeam = teams.find((team) => team.name === scrapedMatch.awayTeamName);
+
+            if (!homeTeam || !awayTeam) {
+                throw new Error("team not found: " + scrapedMatch.homeTeamName || scrapedMatch.awayTeamName);
+            }
+
+            return {
+                id: 0,
+                date: date,
+                homeTeamId: homeTeam.id,
+                awayTeamId: awayTeam.id,
+                status: status,
+                matchday: (matchDayStatuses.includes(status) ? scrapedMatch.currentMatchday : competition.currentSeason.currentMatchday) || 1,
+                winner: matchWinner,
+                homeTeamScore: fullTime.homeTeam,
+                awayTeamScore: fullTime.awayTeam,
+                duration: duration,
+                competitionId: competition.id,
+                competition: competition
+            };
+        });
+    } catch (error) {
+        throw error;
+    }
 }
 
 export function parseScrapedTeams(scrapedTeams: ScrapedTeam[]): Team[] {

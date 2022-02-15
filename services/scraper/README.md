@@ -1,6 +1,9 @@
+## Event driven scraping
+
 ### on start:
 
--   Set a timeout to `update` each 12h
+-   set a timeout to `update` each 12h
+-   start websocket server
 
 ### on update:
 
@@ -14,8 +17,13 @@
 
 ### on live-scrap:
 
--   **if match is ended** `match-end`
+-   **if match data has changed** -> `send-ws-event`
+-   **if match is ended** -> `match-end`
 
 ### on match-end:
 
--   scrape results of competition
+-   scrape results of match -> `send-ws-event`
+
+### on send-ws-event:
+
+-   send updated match data to every subscribed client

@@ -15,12 +15,16 @@ class MatchList extends StatefulWidget {
 class _MatchListState extends State<MatchList> {
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return ListView.separated(
       itemCount: widget.matches.length,
       itemBuilder: (context, index) {
         final match = widget.matches[index];
         return MatchWidgetSmall(match: match);
       },
+      separatorBuilder: (context, index) => Divider(
+        height: 1,
+        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+      ),
     );
   }
 }

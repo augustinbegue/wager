@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:wager_app/styles/text_styles.dart';
 import 'package:wager_app/widgets/matches/match_list_horizontal.dart';
 import 'package:wager_app/widgets/matches/match_list_suggested.dart';
 
@@ -18,22 +17,24 @@ class _HomePageState extends State<HomePage> {
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                SizedBox(
+              children: [
+                const SizedBox(
                   height: 400,
                 ),
                 Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Text(
                     'Welcome Back Augustin,',
                     textAlign: TextAlign.left,
-                    style: white3XL,
+                    style: Theme.of(context).textTheme.headline2?.copyWith(
+                          color: Theme.of(context).colorScheme.onInverseSurface,
+                        ),
                   ),
                 ),
-                MatchListHorizontal(
+                const MatchListHorizontal(
                   title: 'Last Results',
                 ),
-                MatchListSuggested()
+                const MatchListSuggested()
               ],
             ),
           ),

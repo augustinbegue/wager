@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:wager_app/providers/api.dart';
-import 'package:wager_app/styles/text_styles.dart';
-import 'package:wager_app/widgets/decorations/pulse_circle.dart';
+import 'package:wager_app/providers/live_api.dart';
+
+import '../decorations/pulse_circle.dart';
 
 class MatchWidgetSmall extends StatefulWidget {
   final ApiMatchCondensed match;
@@ -17,11 +19,61 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
   final Color drawColor = Colors.blueGrey.shade100;
   final Color team2Color = Colors.red.shade400;
 
+  int homeTeamScore = 0;
+  int awayTeamScore = 0;
+
+  ApiStatus status = ApiStatus.FINISHED;
+
   @override
   Widget build(BuildContext context) {
     DateTime date = widget.match.date;
     String formattedDate =
         "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')} - ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+
+    final homeTeamTextStyle = Theme.of(context).textTheme.bodyText2?.copyWith(
+        fontWeight: widget.match.score.winner == ApiWinner.HOME_TEAM
+            ? FontWeight.bold
+            : FontWeight.normal);
+
+    final awayTeamTextStyle = Theme.of(context).textTheme.bodyText2?.copyWith(
+        fontWeight: widget.match.score.winner == ApiWinner.AWAY_TEAM
+            ? FontWeight.bold
+            : FontWeight.normal);
+
+    // Initialize data
+    homeTeamScore = widget.match.score.fullTime.homeTeam!;
+    awayTeamScore = widget.match.score.fullTime.awayTeam!;
+    status = widget.match.status;
+
+    // Listen for live data changes if the match is Scheduled or Live
+    if (status == ApiStatus.SCHEDULED || status == ApiStatus.LIVE) {
+      final WSApi wsApi = Provider.of<WSApi>(context, listen: false);
+      wsApi.addListener(() {
+        WSMessage message = wsApi.message;
+
+        if (message.matchId == widget.match.id) {
+          if (message.event == WSEvent.MATCH_UPDATE) {
+            if (message.type == WSEventType.HOME_TEAM_SCORE) {
+              setState(() {
+                homeTeamScore = message.value!;
+              });
+            } else if (message.type == WSEventType.AWAY_TEAM_SCORE) {
+              setState(() {
+                awayTeamScore = message.value!;
+              });
+            }
+          } else if (message.event == WSEvent.MATCH_START) {
+            setState(() {
+              status = ApiStatus.IN_PLAY;
+            });
+          } else if (message.event == WSEvent.MATCH_END) {
+            setState(() {
+              status = ApiStatus.FINISHED;
+            });
+          }
+        }
+      });
+    }
 
     Column scheduledLayout = Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -35,17 +87,19 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Column(
         children: [
-          Text(
-            widget.match.score.fullTime.homeTeam.toString(),
-            style: widget.match.score.winner == ApiWinner.HOME_TEAM
-                ? boldSmall
-                : blackSmall,
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: Text(
+              homeTeamScore.toString(),
+              style: homeTeamTextStyle,
+            ),
           ),
-          Text(
-            widget.match.score.fullTime.awayTeam.toString(),
-            style: widget.match.score.winner == ApiWinner.AWAY_TEAM
-                ? boldSmall
-                : blackSmall,
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: Text(
+              awayTeamScore.toString(),
+              style: awayTeamTextStyle,
+            ),
           ),
         ],
       ),
@@ -55,10 +109,10 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
     ]);
 
     return Card(
+      margin: const EdgeInsets.all(0),
       elevation: 0.0,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade100, width: 1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(0),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8),
@@ -94,10 +148,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                 padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
                                 child: Text(
                                   widget.match.homeTeam.name,
-                                  style: widget.match.score.winner ==
-                                          ApiWinner.HOME_TEAM
-                                      ? boldSmall
-                                      : blackSmall,
+                                  style: homeTeamTextStyle,
                                 ),
                               )
                             ]),
@@ -122,10 +173,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                 padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
                                 child: Text(
                                   widget.match.awayTeam.name,
-                                  style: widget.match.score.winner ==
-                                          ApiWinner.AWAY_TEAM
-                                      ? boldSmall
-                                      : blackSmall,
+                                  style: awayTeamTextStyle,
                                 ),
                               )
                             ]),

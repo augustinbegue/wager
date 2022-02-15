@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
 import 'package:wager_app/router.gr.dart';
-import 'package:wager_app/styles/text_styles.dart';
 
 class CompetitionWidgetSmall extends StatelessWidget {
   const CompetitionWidgetSmall({Key? key, required this.competition})
@@ -16,8 +15,7 @@ class CompetitionWidgetSmall extends StatelessWidget {
     return Card(
       elevation: 0.0,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade100, width: 1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(0),
       ),
       child: InkWell(
         child: Padding(
@@ -38,7 +36,8 @@ class CompetitionWidgetSmall extends StatelessWidget {
                 height: 50,
               ),
               const SizedBox(width: 8),
-              Text(competition.name, style: blackXL),
+              Text(competition.name,
+                  style: Theme.of(context).textTheme.headline5),
             ],
           ),
         ),

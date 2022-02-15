@@ -83,7 +83,7 @@ class _CompetitionStandingsState extends State<CompetitionStandings> {
                                 child: CircularProgressIndicator(),
                               ),
                               imageUrl: Uri(
-                                scheme: 'https',
+                                scheme: 'http',
                                 host: Api.endpoint,
                                 path: standings[i].team.crestUrl,
                               ).toString(),

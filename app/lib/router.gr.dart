@@ -64,7 +64,10 @@ class AppRouter extends _i2.RootStackRouter {
           routeData: routeData, child: const _i5.MatchesPage());
     },
     CompetitionRoute.name: (routeData) {
-      final args = routeData.argsAs<CompetitionRouteArgs>();
+      final pathParams = routeData.inheritedPathParams;
+      final args = routeData.argsAs<CompetitionRouteArgs>(
+          orElse: () => CompetitionRouteArgs(
+              competitionId: pathParams.getInt('competitionId')));
       return _i2.MaterialPageX<dynamic>(
           routeData: routeData,
           child: _i6.CompetitionPage(
@@ -209,7 +212,8 @@ class CompetitionRoute extends _i2.PageRouteInfo<CompetitionRouteArgs> {
   CompetitionRoute({_i9.Key? key, required int competitionId})
       : super(CompetitionRoute.name,
             path: 'competition/:competitionId',
-            args: CompetitionRouteArgs(key: key, competitionId: competitionId));
+            args: CompetitionRouteArgs(key: key, competitionId: competitionId),
+            rawPathParams: {'competitionId': competitionId});
 
   static const String name = 'CompetitionRoute';
 }

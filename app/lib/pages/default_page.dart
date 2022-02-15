@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+
 import '../router.gr.dart';
 
 class DefaultPage extends StatefulWidget {
@@ -22,8 +23,8 @@ class _DefaultPageState extends State<DefaultPage> {
       ],
       bottomNavigationBuilder: (_, tabsRouter) {
         return BottomNavigationBar(
-          unselectedItemColor: Colors.black12,
-          selectedItemColor: Colors.blueAccent,
+          unselectedItemColor: Theme.of(context).colorScheme.onBackground,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
           currentIndex: tabsRouter.activeIndex,
           onTap: tabsRouter.setActiveIndex,
           items: const [

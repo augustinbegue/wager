@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wager_app/services/authentication_service.dart';
-import 'package:wager_app/styles/text_styles.dart';
 
 enum ApplicationLoginState {
   loggedOut,
@@ -69,7 +68,8 @@ class _AuthenticationFormState extends State<AuthenticationForm> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Please Register/Sign In', style: blackXL),
+              Text('Please Register/Sign In',
+                  style: Theme.of(context).textTheme.headline1),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {

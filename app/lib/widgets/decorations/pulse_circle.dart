@@ -27,6 +27,12 @@ class _PulseCircleState extends State<PulseCircle>
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Opacity(
       opacity: animation.value,
@@ -34,7 +40,9 @@ class _PulseCircleState extends State<PulseCircle>
         height: 10,
         width: 10,
         decoration: BoxDecoration(
-            color: Colors.red, borderRadius: BorderRadius.circular(10)),
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }

@@ -344,7 +344,9 @@ class ApiCompetition {
 }
 
 class Api {
-  static const String endpoint = '4154-73-202-235-133.ngrok.io';
+  static const String endpoint = '192.168.1.105';
+
+  static const int port = 80;
 
   static Future<Map<String, String>> getAuthHeader() async {
     String? token;
@@ -360,7 +362,7 @@ class Api {
 
   static Future<WeekMatchesList> getWeekMatchesList() async {
     final response = await http.get(
-        Uri(scheme: 'http', host: endpoint, path: '/matches/week'),
+        Uri(scheme: 'http', host: endpoint, path: '/matches/week', port: port),
         headers: {
           ...await getAuthHeader(),
         });
@@ -450,7 +452,8 @@ class Api {
         scheme: 'http',
         host: endpoint,
         path: '/matches',
-        queryParameters: params);
+        queryParameters: params,
+        port: port);
 
     final response = await http.get(uri, headers: {
       ...await getAuthHeader(),
@@ -470,8 +473,8 @@ class Api {
   }
 
   static Future<List<ApiCompetition>> getCompetitions() async {
-    final response = await http
-        .get(Uri(scheme: 'http', host: endpoint, path: '/competitions'));
+    final response = await http.get(
+        Uri(scheme: 'http', host: endpoint, path: '/competitions', port: port));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as List<dynamic>;
@@ -489,7 +492,8 @@ class Api {
     final response = await http.get(Uri(
         scheme: 'http',
         host: endpoint,
-        path: '/competitions/$id/${standings ? 'standings' : ''}'));
+        path: '/competitions/$id/${standings ? 'standings' : ''}',
+        port: port));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;

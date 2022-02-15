@@ -24,11 +24,12 @@ class _MatchesPageState extends State<MatchesPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Matches'),
-            bottom: const TabBar(tabs: <Widget>[
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Matches'),
+          bottom: TabBar(
+            tabs: const <Widget>[
               Tab(
                 text: 'Favorites',
               ),
@@ -38,14 +39,17 @@ class _MatchesPageState extends State<MatchesPage> {
               Tab(
                 text: 'Competitions',
               )
-            ]),
+            ],
+            indicatorColor: Theme.of(context).colorScheme.primary,
           ),
-          body: TabBarView(
-            children: <Widget>[
-              const Center(
-                child: Text("Favorites tab"),
-              ),
-              FutureBuilder<WeekMatchesList>(
+        ),
+        body: TabBarView(
+          children: <Widget>[
+            const Center(
+              child: Text("Favorites tab"),
+            ),
+            Center(
+              child: FutureBuilder<WeekMatchesList>(
                 future: matches,
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
@@ -59,8 +63,9 @@ class _MatchesPageState extends State<MatchesPage> {
                   return const CircularProgressIndicator();
                 },
               ),
-              Center(
-                  child: FutureBuilder<List<ApiCompetition>>(
+            ),
+            Center(
+              child: FutureBuilder<List<ApiCompetition>>(
                 future: competitions,
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
@@ -76,11 +81,13 @@ class _MatchesPageState extends State<MatchesPage> {
                     return Text("${snapshot.error}");
                   }
 
-                  return CircularProgressIndicator();
+                  return const Center(child: CircularProgressIndicator());
                 },
-              )),
-            ],
-          ),
-        ));
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

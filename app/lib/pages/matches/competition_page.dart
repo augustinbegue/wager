@@ -1,14 +1,14 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
-import 'package:wager_app/styles/text_styles.dart';
 import 'package:wager_app/widgets/competitions/competition_standings.dart';
 import 'package:wager_app/widgets/matches/match_list.dart';
 
 class CompetitionPage extends StatefulWidget {
   const CompetitionPage({
     Key? key,
-    required this.competitionId,
+    @PathParam('competitionId') required this.competitionId,
   }) : super(key: key);
 
   final int competitionId;
@@ -58,7 +58,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
                         child: CircularProgressIndicator(),
                       ),
                       imageUrl: Uri(
-                        scheme: 'https',
+                        scheme: 'http',
                         host: Api.endpoint,
                         path: snapshot.data?.emblemUrl ??
                             'static/images/fallback.png',
@@ -72,16 +72,22 @@ class _CompetitionPageState extends State<CompetitionPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(snapshot.data?.name ?? 'Competition'),
-                        Text(formattedSeasonDate, style: whiteSmall),
+                        Text(
+                          formattedSeasonDate,
+                          style: Theme.of(context).textTheme.caption?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                        ),
                       ],
                     )
                   ],
                 ),
-                bottom: const TabBar(
-                  tabs: [
+                bottom: TabBar(
+                  tabs: const [
                     Tab(text: 'Matches'),
                     Tab(text: 'Standings'),
                   ],
+                  indicatorColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
               body: TabBarView(

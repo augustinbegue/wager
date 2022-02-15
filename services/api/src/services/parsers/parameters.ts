@@ -1,13 +1,13 @@
 import { ApiCompetitionParams, ApiMatchesParams } from '../../../../types/api';
 
 export function parseMatchesParams(query: any, dateMendatory = true): ApiMatchesParams {
-    if (dateMendatory && (!query.startDate || !query.endDate)) {
+    if (dateMendatory && (!query.startDate || !query.endDate) && !(query.competition && query.matchday)) {
         throw new Error('Missing required params: startDate, endDate');
     }
 
     let params = {
-        startDate: new Date(query.startDate),
-        endDate: new Date(query.endDate),
+        startDate: new Date(query.startDate ?? '1970-01-01'),
+        endDate: new Date(query.endDate ?? '2100-01-01'),
         matchday: query.matchday ? parseInt(query.matchday) : undefined,
         team: query.team ? parseInt(query.team) : undefined,
         homeTeam: query.homeTeam ? parseInt(query.homeTeam) : undefined,

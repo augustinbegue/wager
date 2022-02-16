@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ApiMatchCondensed } from '../../../../types/api';
+import { ApiMatchCondensed, AuthenticatedRequest, OptionalAuthenticatedRequest } from '../../../../types/api';
 import { prisma } from '../../../../prisma';
 import { parseMatches } from '../../services/parsers/matches';
 import { addUserBets } from '../../services/bets/userBets';
@@ -7,6 +7,8 @@ import { addUserBets } from '../../services/bets/userBets';
 export async function weekController(req: Express.Request, res: Response) {
     let startDate = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
     let endDate = new Date(new Date().getTime() + (6 * 24 * 60 * 60 * 1000));
+
+    let authReq = req as unknown as OptionalAuthenticatedRequest;
 
     let matches = await prisma.match.findMany({
         where: {
@@ -19,7 +21,15 @@ export async function weekController(req: Express.Request, res: Response) {
             homeTeam: true,
             awayTeam: true,
             competition: true,
-            betInfo: true,
+            betInfo: {
+                include: {
+                    bets: {
+                        where: {
+                            userId: authReq.user?.id
+                        }
+                    }
+                }
+            },
         }
     });
 

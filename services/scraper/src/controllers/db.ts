@@ -37,6 +37,9 @@ export async function upsertMatch(match: Match, seasonId: number, eventsControll
                             resultAwayTeamOrDrawOdd: 0,
                             goalsHomeTeamOdds: [],
                             goalsAwayTeamOdds: [],
+                            awayTeamAmount: 0,
+                            homeTeamAmount: 0,
+                            drawAmount: 0,
                         },
                         update: {
                             opened: match.status === "SCHEDULED",
@@ -113,6 +116,9 @@ export async function upsertMatch(match: Match, seasonId: number, eventsControll
                 resultAwayTeamOrDrawOdd: 0,
                 goalsHomeTeamOdds: [],
                 goalsAwayTeamOdds: [],
+                awayTeamAmount: 0,
+                homeTeamAmount: 0,
+                drawAmount: 0,
             }
         });
 

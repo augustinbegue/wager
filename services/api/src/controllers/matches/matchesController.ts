@@ -2,6 +2,7 @@ import { prisma } from '../../../../prisma';
 import { Request, Response } from 'express';
 import { parseMatches } from '../../services/parsers/matches';
 import { parseMatchesParams } from '../../services/parsers/parameters';
+import { AuthenticatedRequest, OptionalAuthenticatedRequest } from '../../../../types/api';
 
 export async function matchesController(req: Request, res: Response) {
     try {
@@ -19,6 +20,8 @@ export async function matchesController(req: Request, res: Response) {
                 }
             ]
         } : {};
+
+        let authReq = req as unknown as OptionalAuthenticatedRequest;
 
         let matches = await prisma.match.findMany({
             where: {
@@ -42,7 +45,15 @@ export async function matchesController(req: Request, res: Response) {
                 homeTeam: true,
                 awayTeam: true,
                 competition: true,
-                betInfo: true,
+                betInfo: {
+                    include: {
+                        bets: {
+                            where: {
+                                userId: authReq.user?.id
+                            }
+                        }
+                    }
+                },
             }
         });
 

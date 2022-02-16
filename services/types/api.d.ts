@@ -6,6 +6,11 @@ export interface AuthenticatedRequest extends Request {
     user: User;
 }
 
+export interface OptionalAuthenticatedRequest extends Request {
+    decoded?: DecodedIdToken;
+    user?: User;
+}
+
 export interface ApiScore {
     winner: winner | null;
     duration: scoreType | null;

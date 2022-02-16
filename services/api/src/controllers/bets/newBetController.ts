@@ -3,7 +3,7 @@ import { prisma } from "../../../../prisma";
 import { AuthenticatedRequest, BetsNewBody } from "../../../../types/api";
 
 export async function newBetController(req: Request, res: Response) {
-    let matchId = parseInt(req.params.matchId);
+    let matchId = parseInt(req.body.matchId);
 
     let authReq = (req as unknown as AuthenticatedRequest);
 
@@ -55,7 +55,27 @@ export async function newBetController(req: Request, res: Response) {
                 }
             });
 
-            res.status(200).send();
+            // Update bet amounts and odds
+            await prisma.betInfo.update(
+                {
+                    where: {
+                        id: betInfo.id,
+                    },
+                    data: {
+                        homeTeamAmount: {
+                            increment: params.type === "GOALS_HOME_TEAM" || params.type === "RESULT_HOME_TEAM" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                        },
+                        awayTeamAmount: {
+                            increment: params.type === "GOALS_AWAY_TEAM" || params.type === "RESULT_AWAY_TEAM" ? params.amount : params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                        },
+                        drawAmount: {
+                            increment: params.type === "RESULT_DRAW" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" || params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                        }
+                    }
+                }
+            )
+
+            res.status(201).send();
         } else {
             res.status(401).json({
                 message: "You've already betted on this match.",

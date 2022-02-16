@@ -130,6 +130,9 @@ model BetInfo {
   resultAwayTeamOrDrawOdd Float
   goalsHomeTeamOdds       Float[]
   goalsAwayTeamOdds       Float[]
+  homeTeamAmount          Int
+  awayTeamAmount          Int
+  drawAmount              Int
 
   @@map("betInfos")
 }

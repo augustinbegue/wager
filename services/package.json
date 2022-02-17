@@ -2,7 +2,8 @@
   "name": "wager-services",
   "workspaces": [
     "api",
-    "scraper"
+    "scraper",
+    "ws"
   ],
   "scripts": {
     "build": "npm run build -ws"
@@ -12,7 +13,8 @@
     "body-parser": "^1.19.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
-    "firebase-admin": "^10.0.2"
+    "firebase-admin": "^10.0.2",
+    "node-ipc": "^10.1.0"
   },
   "devDependencies": {
     "prisma": "^3.10.0-dev.18"

@@ -9,6 +9,14 @@ initializeApp({
     credential: credential.cert(serviceAccount as any)
 });
 
+// Ipc
+import ipc from 'node-ipc';
+ipc.config.id = 'api';
+ipc.config.retry = 1500;
+ipc.config.silent = true;
+ipc.connectTo('ws');
+
+
 // Express and dependencies
 import express from 'express';
 import path from 'path';
@@ -18,37 +26,21 @@ import bodyParser from 'body-parser';
 
 // Swagger
 import swaggerUi from 'swagger-ui-express';
-import swaggerJsDoc from 'swagger-jsdoc';
-import { demoLogger } from './middlewares/logger';
-const options: swaggerJsDoc.Options = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'Wager API',
-            version: '0.1.0',
-            description: 'Wager API',
-        },
-        servers: [
-            {
-                url: 'http://localhost:3000',
-            }
-        ],
-    },
-    apis: ['./src/routes/*.ts'],
-}
-const specs = swaggerJsDoc(options);
-// TODO: Add swagger documentation (https://blog.logrocket.com/documenting-your-express-api-with-swagger/)
+import { swagger } from './docs/swagger.def';
 
 export const app = express();
 
 // Middlewares
+import { demoLogger } from './middlewares/logger';
+
 app.use(demoLogger);
 app.use(cors());
 app.use(bodyParser.json());
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true, customSiteTitle: 'Wager API' }));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swagger, { explorer: true, customSiteTitle: 'Wager API' }));
 
 app.use('/matches', routers.matchesRouter);
 app.use('/competitions', routers.competitionsRouter);
+app.use('/bets', routers.betsRouter);
 
 // Static Assets
 app.use('/static', express.static(path.join(__dirname, '../public')));

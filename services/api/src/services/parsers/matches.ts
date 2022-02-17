@@ -50,6 +50,7 @@ export function parseMatches(matches: MatchIncludesAll[]): ApiMatchCondensed[] {
                 goalsHomeTeamOdds: match.betInfo.goalsHomeTeamOdds,
                 goalsAwayTeamOdds: match.betInfo.goalsAwayTeamOdds
             },
+            bet: match.betInfo?.bets[0]
         };
     });
 }

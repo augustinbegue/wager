@@ -4,6 +4,18 @@ import { prisma } from '../../../../prisma';
 import { parseMatches } from '../../services/parsers/matches';
 import { addUserBets } from '../../services/bets/userBets';
 
+export const swGetMatchesWeek = {
+    "summary": "Get all matches for a week",
+    "tags": [
+        "matches",
+    ],
+    "responses": {
+        "200": {
+            "description": "Matches",
+        },
+    },
+}
+
 export async function weekController(req: Express.Request, res: Response) {
     let startDate = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
     let endDate = new Date(new Date().getTime() + (6 * 24 * 60 * 60 * 1000));
@@ -41,4 +53,3 @@ export async function weekController(req: Express.Request, res: Response) {
 
     res.json(apiMatches);
 }
-

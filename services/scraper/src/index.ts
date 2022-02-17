@@ -3,66 +3,38 @@ import dotenv from 'dotenv';
 // Load dotenv before importing anything else
 dotenv.config();
 
+import ipc from 'node-ipc';
 import { EventsController } from "./events/events-controller";
 import { readFileSync } from 'fs';
 import { ScraperConfig } from '../../types/configs';
-import ws from 'ws';
 
 let config = JSON.parse(readFileSync(__dirname + '/config.json', 'utf8')) as ScraperConfig;
 
 // Scrape every 12h
 let eventsController = new EventsController(config);
 
-// Create websocket server
-let wss = new ws.Server({ port: 4000 });
+// Create ipc server
+ipc.config.id = 'scraper';
+ipc.config.retry = 1500;
+ipc.config.silent = true;
 
-wss.on('connection', (ws, req) => {
-    ws.on('message', (message) => {
-        let data = JSON.parse(message.toString());
-    });
-});
+ipc.connectTo('ws');
 
 eventsController.emitter.on('match-start', (matchId) => {
     console.log(`Match ${matchId} started.`);
 
-    // Send match start event to all clients
-    wss.clients.forEach((client) => {
-        if (client.readyState === ws.OPEN) {
-            client.send(JSON.stringify({
-                event: 'match-start',
-                matchId: matchId
-            }));
-        }
-    });
+    ipc.of['ws'].emit('match-start', matchId);
 });
 
 eventsController.emitter.on('match-end', (matchId) => {
     console.log(`Match ${matchId} ended.`);
 
-    // Send match end event to all clients
-    wss.clients.forEach((client) => {
-        if (client.readyState === ws.OPEN) {
-            client.send(JSON.stringify({
-                event: 'match-end',
-                matchId: matchId
-            }));
-        }
-    });
+    ipc.of['ws'].emit('match-end', matchId);
 });
 
 eventsController.emitter.on('match-update', (matchId, type, value) => {
     console.log(`Match ${matchId} updated.`);
 
-    // Send match update event to all clients
-    wss.clients.forEach((client) => {
-        if (client.readyState === ws.OPEN) {
-            client.send(JSON.stringify({
-                event: 'match-update',
-                matchId: matchId,
-                type: type,
-                value: value
-            }));
-        }
-    });
+    ipc.of['ws'].emit('match-update', { matchId, type, value });
 });
 

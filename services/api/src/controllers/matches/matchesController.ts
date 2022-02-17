@@ -2,7 +2,29 @@ import { prisma } from '../../../../prisma';
 import { Request, Response } from 'express';
 import { parseMatches } from '../../services/parsers/matches';
 import { parseMatchesParams } from '../../services/parsers/parameters';
-import { AuthenticatedRequest, OptionalAuthenticatedRequest } from '../../../../types/api';
+import { OptionalAuthenticatedRequest } from '../../../../types/api';
+
+export const swGetMatches = {
+    "summary": "Get all matches",
+    "tags": [
+        "matches",
+    ],
+    "responses": {
+        "200": {
+            "description": "Matches",
+        },
+    },
+    "parameters": [
+        {
+            "competition": {
+                "name": "competition",
+                "in": "query",
+                "description": "Competition ID",
+                "required": false,
+            },
+        }
+    ]
+}
 
 export async function matchesController(req: Request, res: Response) {
     try {

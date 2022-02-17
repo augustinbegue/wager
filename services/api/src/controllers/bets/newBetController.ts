@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { prisma } from "../../../../prisma";
 import { AuthenticatedRequest, BetsNewBody } from "../../../../types/api";
+import { computeNewOdds } from "../../services/bets/userBets";
 
 export async function newBetController(req: Request, res: Response) {
-    let matchId = parseInt(req.body.matchId);
+    let matchId = parseInt(req.params.matchId);
 
     let authReq = (req as unknown as AuthenticatedRequest);
 
@@ -45,7 +46,7 @@ export async function newBetController(req: Request, res: Response) {
 
     if (betInfo) {
         if (betInfo.bets.length < 1) {
-            await prisma.bet.create({
+            let bet = await prisma.bet.create({
                 data: {
                     userId: authReq.user.id,
                     betInfoId: betInfo.id,
@@ -56,24 +57,42 @@ export async function newBetController(req: Request, res: Response) {
             });
 
             // Update bet amounts and odds
-            await prisma.betInfo.update(
-                {
-                    where: {
-                        id: betInfo.id,
-                    },
-                    data: {
-                        homeTeamAmount: {
-                            increment: params.type === "GOALS_HOME_TEAM" || params.type === "RESULT_HOME_TEAM" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+            betInfo = {
+                ...betInfo,
+                ... await prisma.betInfo.update(
+                    {
+                        where: {
+                            id: betInfo.id,
                         },
-                        awayTeamAmount: {
-                            increment: params.type === "GOALS_AWAY_TEAM" || params.type === "RESULT_AWAY_TEAM" ? params.amount : params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
-                        },
-                        drawAmount: {
-                            increment: params.type === "RESULT_DRAW" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" || params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                        data: {
+                            homeTeamAmount: {
+                                increment: params.type === "GOALS_HOME_TEAM" || params.type === "RESULT_HOME_TEAM" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                            },
+                            awayTeamAmount: {
+                                increment: params.type === "GOALS_AWAY_TEAM" || params.type === "RESULT_AWAY_TEAM" ? params.amount : params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                            },
+                            drawAmount: {
+                                increment: params.type === "RESULT_DRAW" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" || params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
+                            },
                         }
                     }
+                )
+            }
+
+            // Update user balance
+            await prisma.user.update({
+                where: {
+                    id: authReq.user.id,
+                },
+                data: {
+                    balance: {
+                        decrement: params.amount,
+                    }
                 }
-            )
+            })
+
+            // Update odds
+            computeNewOdds(betInfo);
 
             res.status(201).send();
         } else {

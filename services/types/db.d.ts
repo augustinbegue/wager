@@ -12,7 +12,11 @@ export type MatchIncludesTeamsCompetition = Match & {
 }
 
 export type MatchIncludesAll = MatchIncludesTeamsCompetition & {
-    betInfo: BetInfo | null,
+    betInfo: BetInfoIncludesBets | null,
+}
+
+export type BetInfoIncludesBets = BetInfo & {
+    bets: Bet[],
 }
 
 export type CompetitionIncludesSeason = Competition & {

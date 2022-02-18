@@ -2,6 +2,7 @@ import { prisma } from "../../../prisma"
 import { Match } from "@prisma/client"
 import { updateStandingsForMatch } from "./standings"
 import { EventsController } from "../events/events-controller"
+import { closeBets } from "./bets"
 
 export async function upsertMatch(match: Match, seasonId: number, eventsController?: EventsController) {
     let matchEntry = await prisma.match.findFirst({
@@ -69,7 +70,8 @@ export async function upsertMatch(match: Match, seasonId: number, eventsControll
 
         // Match started
         if (matchEntry.status === "SCHEDULED" && match.status === "IN_PLAY") {
-            // TODO: Close bets
+            // Close bets
+            closeBets(matchEntry.id);
 
             // TODO: Send notifications
         }
@@ -80,7 +82,7 @@ export async function upsertMatch(match: Match, seasonId: number, eventsControll
             // Update standings
             updateStandingsForMatch(match);
 
-            // TODO: Compute bets results
+            // Compute bets results
 
             // TODO: Send notifications
         }

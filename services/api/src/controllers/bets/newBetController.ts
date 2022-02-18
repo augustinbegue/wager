@@ -45,6 +45,12 @@ export async function newBetController(req: Request, res: Response) {
     });
 
     if (betInfo) {
+        if (!betInfo.opened) {
+            return res.status(401).json({
+                error: "Bets on this match are closed.",
+            });
+        }
+
         if (betInfo.bets.length < 1) {
             let bet = await prisma.bet.create({
                 data: {
@@ -102,7 +108,7 @@ export async function newBetController(req: Request, res: Response) {
         }
     } else {
         res.status(400).json({
-            message: "Match not found",
+            message: "Match not found.",
         });
     }
 }

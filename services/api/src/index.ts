@@ -24,10 +24,6 @@ import routers from './routes';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
-// Swagger
-import swaggerUi from 'swagger-ui-express';
-import { swagger } from './docs/swagger.def';
-
 export const app = express();
 
 // Middlewares
@@ -36,11 +32,16 @@ import { demoLogger } from './middlewares/logger';
 app.use(demoLogger);
 app.use(cors());
 app.use(bodyParser.json());
+
+// Swagger
+import swaggerUi from 'swagger-ui-express';
+import { swagger } from './docs/swagger.def';
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swagger, { explorer: true, customSiteTitle: 'Wager API' }));
 
 app.use('/matches', routers.matchesRouter);
 app.use('/competitions', routers.competitionsRouter);
 app.use('/bets', routers.betsRouter);
+app.use('/users', routers.usersRouter);
 
 // Static Assets
 app.use('/static', express.static(path.join(__dirname, '../public')));

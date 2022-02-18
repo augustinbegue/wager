@@ -1,34 +1,7 @@
-import { Bet, BetInfo } from "@prisma/client";
+import { BetInfo } from "@prisma/client";
 import { prisma } from "../../../../prisma";
-import { ApiMatchCondensed } from "../../../../types/api";
 import ipc from 'node-ipc';
 import { clamp } from "../../utils/math";
-
-export async function addUserBets(apiMatches: ApiMatchCondensed[], userId: number) {
-    let promises = apiMatches.map(async match => {
-        let userBet = await prisma.bet.findFirst({
-            where: {
-                userId: userId,
-                betInfoId: match.betInfo.id
-            }
-        });
-
-        if (userBet) {
-            return {
-                ...match, bet: {
-                    id: userBet.id,
-                    type: userBet.type,
-                    amount: userBet.amount,
-                    goals: userBet.goals
-                },
-            }
-        } else {
-            return match;
-        }
-    });
-
-    return Promise.all(promises);
-}
 
 export async function computeNewOdds(betInfo: BetInfo) {
     let totalAmount = betInfo.homeTeamAmount + betInfo.awayTeamAmount + betInfo.drawAmount;

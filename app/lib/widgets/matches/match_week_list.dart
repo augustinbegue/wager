@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
+import 'package:wager_app/utilities/platform_detection.dart';
 import 'package:wager_app/widgets/matches/match_display_small.dart';
 
 import '../../router.gr.dart';
@@ -71,8 +72,8 @@ class _MatchWeekListState extends State<MatchWeekList> {
                       host: Api.endpoint,
                       path: competitionMatchesList.competition.emblemUrl,
                     ).toString(),
-                    height: 24,
-                    width: 24,
+                    height: PlatformDetection.isMobile() ? 34 : 44,
+                    width: PlatformDetection.isMobile() ? 34 : 44,
                   ),
                   Padding(
                       padding: const EdgeInsets.all(4),

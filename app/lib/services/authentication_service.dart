@@ -1,10 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:wager_app/providers/api.dart';
 
-class AuthenticationService {
+class AuthenticationService extends ChangeNotifier {
   final FirebaseAuth _firebaseAuth;
 
-  AuthenticationService(this._firebaseAuth);
+  ApiUser? currentUser;
+
+  AuthenticationService(this._firebaseAuth) {
+    _firebaseAuth.authStateChanges().listen((user) async {
+      if (user == null) {
+        currentUser = null;
+      } else {
+        currentUser = await Api.getCurrentUser();
+      }
+
+      notifyListeners();
+    });
+  }
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 

@@ -72,10 +72,8 @@ class _MatchListMatchdayState extends State<MatchListMatchday> {
           child: FutureBuilder<List<ApiMatchCondensed>>(
             future: matches,
             builder: (context, snapshot) {
-              print(snapshot.connectionState);
               if (snapshot.connectionState == ConnectionState.done &&
                   snapshot.hasData) {
-                print(snapshot.data);
                 return MatchList(
                   matches: snapshot.data as List<ApiMatchCondensed>,
                 );

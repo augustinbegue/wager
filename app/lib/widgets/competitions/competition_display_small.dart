@@ -14,6 +14,7 @@ class CompetitionWidgetSmall extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0.0,
+      margin: const EdgeInsets.fromLTRB(0, 4, 0, 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(0),
       ),

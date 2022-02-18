@@ -26,8 +26,8 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     'Welcome Back Augustin,',
                     textAlign: TextAlign.left,
-                    style: Theme.of(context).textTheme.headline2?.copyWith(
-                          color: Theme.of(context).colorScheme.onInverseSurface,
+                    style: Theme.of(context).textTheme.headline1?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                   ),
                 ),

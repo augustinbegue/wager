@@ -70,7 +70,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
                         Text(
                           formattedSeasonDate,
                           style: Theme.of(context).textTheme.caption?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                         ),
                       ],

@@ -100,8 +100,8 @@ class ApiBetInfo {
   final double resultAwayTeamOdd;
   final double resultHomeTeamOrDrawOdd;
   final double resultAwayTeamOrDrawOdd;
-  final List<double> goalsHomeTeamOdds;
-  final List<double> goalsAwayTeamOdds;
+  final List<dynamic> goalsHomeTeamOdds;
+  final List<dynamic> goalsAwayTeamOdds;
 
   const ApiBetInfo(
       {required this.id,
@@ -125,8 +125,8 @@ class ApiBetInfo {
         resultAwayTeamOdd: json['resultAwayTeamOdd'].toDouble(),
         resultHomeTeamOrDrawOdd: json['resultHomeTeamOrDrawOdd'].toDouble(),
         resultAwayTeamOrDrawOdd: json['resultAwayTeamOrDrawOdd'].toDouble(),
-        goalsHomeTeamOdds: json['goalsHomeTeamOdds'].cast<double>(),
-        goalsAwayTeamOdds: json['goalsAwayTeamOdds'].cast<double>());
+        goalsHomeTeamOdds: json['goalsHomeTeamOdds'],
+        goalsAwayTeamOdds: json['goalsAwayTeamOdds']);
   }
 }
 
@@ -143,7 +143,7 @@ enum ApiBetType {
 class ApiBet {
   final int id;
   final ApiBetType type;
-  final double amount;
+  final int amount;
   final int? goals;
 
   const ApiBet(
@@ -156,7 +156,7 @@ class ApiBet {
     ApiBetType type = ApiBetType.RESULT_HOME_TEAM;
     for (var element in ApiBetType.values) {
       final String elementName = element.toString().split('.')[1];
-      if (elementName == json['status']) {
+      if (elementName == json['type']) {
         type = element;
       }
     }
@@ -166,6 +166,15 @@ class ApiBet {
         type: type,
         amount: json['amount'],
         goals: json['goals']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type.toString().split('.')[1],
+      'amount': amount,
+      'goals': goals
+    };
   }
 }
 
@@ -343,8 +352,38 @@ class ApiCompetition {
   }
 }
 
+class ApiUser {
+  final int id;
+  final String email;
+  final String name;
+  final String? photoUrl;
+  final String uid;
+  final double balance;
+
+  const ApiUser({
+    required this.id,
+    required this.email,
+    required this.name,
+    required this.photoUrl,
+    required this.uid,
+    required this.balance,
+  });
+
+  factory ApiUser.fromJson(Map<String, dynamic> json) {
+    return ApiUser(
+      id: json['id'],
+      email: json['email'],
+      name: json['name'],
+      photoUrl: json['photoUrl'],
+      uid: json['uid'],
+      balance: json['balance'].toDouble(),
+    );
+  }
+}
+
 class Api {
-  static const String endpoint = '192.168.39.28'; // '192.168.1.105';
+  static const String endpoint =
+      '10.143.197.38'; // '192.168.1.105'; //  '192.168.39.28';
 
   static const int port = 80;
 
@@ -510,6 +549,43 @@ class Api {
       return ApiCompetition.fromJson(json);
     } else {
       throw Exception('Failed to load competition.');
+    }
+  }
+
+  static Future<void> postNewBet(int matchId, ApiBet bet) async {
+    final response = await http.post(
+        Uri(
+            scheme: 'http',
+            host: endpoint,
+            path: '/bets/$matchId/new',
+            port: port),
+        headers: {
+          ...await getAuthHeader(),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(bet.toJson()));
+
+    if (response.statusCode == 201) {
+      return;
+    } else {
+      throw Exception('Failed to post bet.');
+    }
+  }
+
+  static Future<ApiUser> getCurrentUser() async {
+    final response = await http.get(
+      Uri(scheme: 'http', host: endpoint, path: '/users/me', port: port),
+      headers: {
+        ...await getAuthHeader(),
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+      return ApiUser.fromJson(json);
+    } else {
+      throw Exception('Failed to load user.');
     }
   }
 }

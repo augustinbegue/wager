@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wager_app/providers/api.dart';
 
+import '../../utilities/platform_detection.dart';
+
 class CompetitionStandings extends StatefulWidget {
   const CompetitionStandings({Key? key, required this.competition})
       : super(key: key);
@@ -87,8 +89,8 @@ class _CompetitionStandingsState extends State<CompetitionStandings> {
                                 host: Api.endpoint,
                                 path: standings[i].team.crestUrl,
                               ).toString(),
-                              height: 20,
-                              width: 20,
+                              height: PlatformDetection.isMobile() ? 20 : 24,
+                              width: PlatformDetection.isMobile() ? 20 : 24,
                             ),
                             const SizedBox(width: 4),
                             Text(standings[i].team.name),

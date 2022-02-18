@@ -69,7 +69,7 @@ class _AuthenticationFormState extends State<AuthenticationForm> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('Please Register/Sign In',
-                  style: Theme.of(context).textTheme.headline1),
+                  style: Theme.of(context).textTheme.headline4),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {

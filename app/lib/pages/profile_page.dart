@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../widgets/auth/authentication_form.dart';
 
 // new
@@ -13,7 +14,10 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+      appBar: AppBar(
+        title: const Text('Profile'),
+      ),
+      body: const Center(
         child: AuthenticationForm(),
       ),
     );

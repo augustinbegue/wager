@@ -10,206 +10,170 @@
 //
 // ignore_for_file: type=lint
 
-import 'package:auto_route/auto_route.dart' as _i2;
-import 'package:flutter/material.dart' as _i9;
+import 'package:auto_route/auto_route.dart' as _i3;
+import 'package:flutter/material.dart' as _i8;
 
 import 'pages/default_page.dart' as _i1;
-import 'pages/history_page.dart' as _i7;
-import 'pages/home_page.dart' as _i3;
-import 'pages/matches/competition_page.dart' as _i6;
-import 'pages/matches_page.dart' as _i5;
-import 'pages/profile_page.dart' as _i8;
-import 'pages/ranking_page.dart' as _i4;
+import 'pages/home_page.dart' as _i4;
+import 'pages/matches/competition_page.dart' as _i7;
+import 'pages/matches_page.dart' as _i6;
+import 'pages/profile_page.dart' as _i2;
+import 'pages/ranking_page.dart' as _i5;
 
-class AppRouter extends _i2.RootStackRouter {
-  AppRouter([_i9.GlobalKey<_i9.NavigatorState>? navigatorKey])
+class AppRouter extends _i3.RootStackRouter {
+  AppRouter([_i8.GlobalKey<_i8.NavigatorState>? navigatorKey])
       : super(navigatorKey);
 
   @override
-  final Map<String, _i2.PageFactory> pagesMap = {
+  final Map<String, _i3.PageFactory> pagesMap = {
     DefaultRoute.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
+      return _i3.MaterialPageX<dynamic>(
           routeData: routeData, child: const _i1.DefaultPage());
     },
+    ProfileRoute.name: (routeData) {
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i2.ProfilePage());
+    },
     HomeRouter.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i2.EmptyRouterPage());
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i3.EmptyRouterPage());
     },
     RankingRouter.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i2.EmptyRouterPage());
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i3.EmptyRouterPage());
     },
     MatchesRouter.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i2.EmptyRouterPage());
-    },
-    HistoryRouter.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i2.EmptyRouterPage());
-    },
-    ProfileRouter.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i2.EmptyRouterPage());
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i3.EmptyRouterPage());
     },
     HomeRoute.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i3.HomePage());
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i4.HomePage());
     },
     RankingRoute.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i4.RankingPage());
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i5.RankingPage());
     },
     MatchesRoute.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i5.MatchesPage());
+      return _i3.MaterialPageX<dynamic>(
+          routeData: routeData, child: const _i6.MatchesPage());
     },
     CompetitionRoute.name: (routeData) {
       final pathParams = routeData.inheritedPathParams;
       final args = routeData.argsAs<CompetitionRouteArgs>(
           orElse: () => CompetitionRouteArgs(
               competitionId: pathParams.getInt('competitionId')));
-      return _i2.MaterialPageX<dynamic>(
+      return _i3.MaterialPageX<dynamic>(
           routeData: routeData,
-          child: _i6.CompetitionPage(
+          child: _i7.CompetitionPage(
               key: args.key, competitionId: args.competitionId));
-    },
-    HistoryRoute.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i7.HistoryPage());
-    },
-    ProfileRoute.name: (routeData) {
-      return _i2.MaterialPageX<dynamic>(
-          routeData: routeData, child: const _i8.ProfilePage());
     }
   };
 
   @override
-  List<_i2.RouteConfig> get routes => [
-        _i2.RouteConfig(DefaultRoute.name, path: '/', children: [
-          _i2.RouteConfig(HomeRouter.name,
+  List<_i3.RouteConfig> get routes => [
+        _i3.RouteConfig(DefaultRoute.name, path: '/', children: [
+          _i3.RouteConfig(HomeRouter.name,
               path: '',
               parent: DefaultRoute.name,
               children: [
-                _i2.RouteConfig(HomeRoute.name,
+                _i3.RouteConfig(HomeRoute.name,
                     path: '', parent: HomeRouter.name)
               ]),
-          _i2.RouteConfig(RankingRouter.name,
+          _i3.RouteConfig(RankingRouter.name,
               path: 'ranking',
               parent: DefaultRoute.name,
               children: [
-                _i2.RouteConfig(RankingRoute.name,
+                _i3.RouteConfig(RankingRoute.name,
                     path: '', parent: RankingRouter.name)
               ]),
-          _i2.RouteConfig(MatchesRouter.name,
+          _i3.RouteConfig(MatchesRouter.name,
               path: 'matches',
               parent: DefaultRoute.name,
               children: [
-                _i2.RouteConfig(MatchesRoute.name,
+                _i3.RouteConfig(MatchesRoute.name,
                     path: '', parent: MatchesRouter.name),
-                _i2.RouteConfig(CompetitionRoute.name,
+                _i3.RouteConfig(CompetitionRoute.name,
                     path: 'competition/:competitionId',
                     parent: MatchesRouter.name)
-              ]),
-          _i2.RouteConfig(HistoryRouter.name,
-              path: 'history',
-              parent: DefaultRoute.name,
-              children: [
-                _i2.RouteConfig(HistoryRoute.name,
-                    path: '', parent: HistoryRouter.name)
-              ]),
-          _i2.RouteConfig(ProfileRouter.name,
-              path: 'profile',
-              parent: DefaultRoute.name,
-              children: [
-                _i2.RouteConfig(ProfileRoute.name,
-                    path: '', parent: ProfileRouter.name)
               ])
-        ])
+        ]),
+        _i3.RouteConfig(ProfileRoute.name, path: '/profile')
       ];
 }
 
 /// generated route for
 /// [_i1.DefaultPage]
-class DefaultRoute extends _i2.PageRouteInfo<void> {
-  const DefaultRoute({List<_i2.PageRouteInfo>? children})
+class DefaultRoute extends _i3.PageRouteInfo<void> {
+  const DefaultRoute({List<_i3.PageRouteInfo>? children})
       : super(DefaultRoute.name, path: '/', initialChildren: children);
 
   static const String name = 'DefaultRoute';
 }
 
 /// generated route for
-/// [_i2.EmptyRouterPage]
-class HomeRouter extends _i2.PageRouteInfo<void> {
-  const HomeRouter({List<_i2.PageRouteInfo>? children})
+/// [_i2.ProfilePage]
+class ProfileRoute extends _i3.PageRouteInfo<void> {
+  const ProfileRoute() : super(ProfileRoute.name, path: '/profile');
+
+  static const String name = 'ProfileRoute';
+}
+
+/// generated route for
+/// [_i3.EmptyRouterPage]
+class HomeRouter extends _i3.PageRouteInfo<void> {
+  const HomeRouter({List<_i3.PageRouteInfo>? children})
       : super(HomeRouter.name, path: '', initialChildren: children);
 
   static const String name = 'HomeRouter';
 }
 
 /// generated route for
-/// [_i2.EmptyRouterPage]
-class RankingRouter extends _i2.PageRouteInfo<void> {
-  const RankingRouter({List<_i2.PageRouteInfo>? children})
+/// [_i3.EmptyRouterPage]
+class RankingRouter extends _i3.PageRouteInfo<void> {
+  const RankingRouter({List<_i3.PageRouteInfo>? children})
       : super(RankingRouter.name, path: 'ranking', initialChildren: children);
 
   static const String name = 'RankingRouter';
 }
 
 /// generated route for
-/// [_i2.EmptyRouterPage]
-class MatchesRouter extends _i2.PageRouteInfo<void> {
-  const MatchesRouter({List<_i2.PageRouteInfo>? children})
+/// [_i3.EmptyRouterPage]
+class MatchesRouter extends _i3.PageRouteInfo<void> {
+  const MatchesRouter({List<_i3.PageRouteInfo>? children})
       : super(MatchesRouter.name, path: 'matches', initialChildren: children);
 
   static const String name = 'MatchesRouter';
 }
 
 /// generated route for
-/// [_i2.EmptyRouterPage]
-class HistoryRouter extends _i2.PageRouteInfo<void> {
-  const HistoryRouter({List<_i2.PageRouteInfo>? children})
-      : super(HistoryRouter.name, path: 'history', initialChildren: children);
-
-  static const String name = 'HistoryRouter';
-}
-
-/// generated route for
-/// [_i2.EmptyRouterPage]
-class ProfileRouter extends _i2.PageRouteInfo<void> {
-  const ProfileRouter({List<_i2.PageRouteInfo>? children})
-      : super(ProfileRouter.name, path: 'profile', initialChildren: children);
-
-  static const String name = 'ProfileRouter';
-}
-
-/// generated route for
-/// [_i3.HomePage]
-class HomeRoute extends _i2.PageRouteInfo<void> {
+/// [_i4.HomePage]
+class HomeRoute extends _i3.PageRouteInfo<void> {
   const HomeRoute() : super(HomeRoute.name, path: '');
 
   static const String name = 'HomeRoute';
 }
 
 /// generated route for
-/// [_i4.RankingPage]
-class RankingRoute extends _i2.PageRouteInfo<void> {
+/// [_i5.RankingPage]
+class RankingRoute extends _i3.PageRouteInfo<void> {
   const RankingRoute() : super(RankingRoute.name, path: '');
 
   static const String name = 'RankingRoute';
 }
 
 /// generated route for
-/// [_i5.MatchesPage]
-class MatchesRoute extends _i2.PageRouteInfo<void> {
+/// [_i6.MatchesPage]
+class MatchesRoute extends _i3.PageRouteInfo<void> {
   const MatchesRoute() : super(MatchesRoute.name, path: '');
 
   static const String name = 'MatchesRoute';
 }
 
 /// generated route for
-/// [_i6.CompetitionPage]
-class CompetitionRoute extends _i2.PageRouteInfo<CompetitionRouteArgs> {
-  CompetitionRoute({_i9.Key? key, required int competitionId})
+/// [_i7.CompetitionPage]
+class CompetitionRoute extends _i3.PageRouteInfo<CompetitionRouteArgs> {
+  CompetitionRoute({_i8.Key? key, required int competitionId})
       : super(CompetitionRoute.name,
             path: 'competition/:competitionId',
             args: CompetitionRouteArgs(key: key, competitionId: competitionId),
@@ -221,7 +185,7 @@ class CompetitionRoute extends _i2.PageRouteInfo<CompetitionRouteArgs> {
 class CompetitionRouteArgs {
   const CompetitionRouteArgs({this.key, required this.competitionId});
 
-  final _i9.Key? key;
+  final _i8.Key? key;
 
   final int competitionId;
 
@@ -229,20 +193,4 @@ class CompetitionRouteArgs {
   String toString() {
     return 'CompetitionRouteArgs{key: $key, competitionId: $competitionId}';
   }
-}
-
-/// generated route for
-/// [_i7.HistoryPage]
-class HistoryRoute extends _i2.PageRouteInfo<void> {
-  const HistoryRoute() : super(HistoryRoute.name, path: '');
-
-  static const String name = 'HistoryRoute';
-}
-
-/// generated route for
-/// [_i8.ProfilePage]
-class ProfileRoute extends _i2.PageRouteInfo<void> {
-  const ProfileRoute() : super(ProfileRoute.name, path: '');
-
-  static const String name = 'ProfileRoute';
 }

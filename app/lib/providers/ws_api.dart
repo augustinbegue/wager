@@ -12,13 +12,14 @@ enum WSEvent {
 enum WSEventType {
   HOME_TEAM_SCORE,
   AWAY_TEAM_SCORE,
+  ODDS,
 }
 
 class WSMessage {
   WSEvent event;
   int matchId;
   WSEventType? type;
-  int? value;
+  dynamic? value;
 
   WSMessage(
       {required this.event, required this.matchId, this.type, this.value});
@@ -26,24 +27,27 @@ class WSMessage {
   factory WSMessage.fromJson(Map<String, dynamic> json) {
     WSEvent event = WSEvent.MATCH_END;
     switch (json['event']) {
-      case 'match_start':
+      case 'match-start':
         event = WSEvent.MATCH_START;
         break;
-      case 'match_end':
+      case 'match-end':
         event = WSEvent.MATCH_END;
         break;
-      case 'match_update':
+      case 'match-update':
         event = WSEvent.MATCH_UPDATE;
         break;
     }
 
     WSEventType? type;
     switch (json['type']) {
-      case 'home_team_score':
+      case 'home-team-score':
         type = WSEventType.HOME_TEAM_SCORE;
         break;
-      case 'away_team_score':
+      case 'away-team-score':
         type = WSEventType.AWAY_TEAM_SCORE;
+        break;
+      case 'odds':
+        type = WSEventType.ODDS;
         break;
     }
 
@@ -66,7 +70,7 @@ class WSMessage {
 }
 
 class WSApi extends ChangeNotifier {
-  static const String endpoint = '192.168.1.105';
+  static const String endpoint = '10.143.197.38'; // '192.168.1.105';
   static const int port = 4000;
 
   late WebSocketChannel channel;
@@ -83,7 +87,7 @@ class WSApi extends ChangeNotifier {
 
     channel.stream.listen((message) {
       print(message);
-      message = WSMessage.fromJson(jsonDecode(message));
+      this.message = WSMessage.fromJson(jsonDecode(message));
       notifyListeners();
     });
   }
@@ -94,5 +98,11 @@ class WSApi extends ChangeNotifier {
 
   void send(Object message) {
     _send(json.encode(message));
+  }
+
+  @override
+  void dispose() {
+    channel.sink.close();
+    super.dispose();
   }
 }

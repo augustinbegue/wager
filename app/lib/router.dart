@@ -1,6 +1,5 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:wager_app/pages/default_page.dart';
-import 'package:wager_app/pages/history_page.dart';
 import 'package:wager_app/pages/home_page.dart';
 import 'package:wager_app/pages/matches/competition_page.dart';
 import 'package:wager_app/pages/matches_page.dart';
@@ -11,6 +10,7 @@ import 'package:wager_app/pages/ranking_page.dart';
 @MaterialAutoRouter(
   replaceInRouteName: 'Page,Route',
   routes: <AutoRoute>[
+    // Routes accessed from tabs
     AutoRoute(page: DefaultPage, path: '/', children: [
       AutoRoute(page: EmptyRouterPage, name: 'HomeRouter', path: '', children: [
         AutoRoute(path: '', page: HomePage),
@@ -31,21 +31,9 @@ import 'package:wager_app/pages/ranking_page.dart';
             AutoRoute(
                 path: 'competition/:competitionId', page: CompetitionPage),
           ]),
-      AutoRoute(
-          page: EmptyRouterPage,
-          name: 'HistoryRouter',
-          path: 'history',
-          children: [
-            AutoRoute(path: '', page: HistoryPage),
-          ]),
-      AutoRoute(
-          page: EmptyRouterPage,
-          name: 'ProfileRouter',
-          path: 'profile',
-          children: [
-            AutoRoute(path: '', page: ProfilePage),
-          ]),
     ]),
+    // Other routes
+    AutoRoute(path: '/profile', page: ProfilePage),
   ],
 )
 class $AppRouter {}

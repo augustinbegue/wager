@@ -16,9 +16,9 @@ class _PulseCircleState extends State<PulseCircle>
   void initState() {
     super.initState();
 
-    controller =
-        AnimationController(duration: const Duration(seconds: 1), vsync: this);
-    animation = Tween<double>(begin: 0.5, end: 1.0).animate(controller)
+    controller = AnimationController(
+        duration: const Duration(milliseconds: 1000), vsync: this);
+    animation = Tween<double>(begin: 0.1, end: 1.0).animate(controller)
       ..addListener(() {
         setState(() {});
       });
@@ -37,8 +37,8 @@ class _PulseCircleState extends State<PulseCircle>
     return Opacity(
       opacity: animation.value,
       child: Container(
-        height: 10,
-        width: 10,
+        height: 6,
+        width: 6,
         decoration: BoxDecoration(
           color: Colors.red,
           borderRadius: BorderRadius.circular(10),

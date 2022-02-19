@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -18,23 +20,40 @@ class MatchWidgetSmall extends StatefulWidget {
 }
 
 class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
-  late int homeTeamScore;
-  late int awayTeamScore;
-  late ApiStatus status;
-  late ApiBetInfo betInfo;
-  ApiBet? bet;
+  late DateTime _date;
+  late String _formattedDate;
+  late int _homeTeamScore;
+  late int _awayTeamScore;
+  late ApiStatus _status;
+  late ApiBetInfo _betInfo;
+  late int? _minutes;
+  late Timer _liveTimer;
+  ApiBet? _bet;
 
   @override
   void initState() {
     super.initState();
-    homeTeamScore = widget.match.score.fullTime.homeTeam!;
-    awayTeamScore = widget.match.score.fullTime.awayTeam!;
-    status = widget.match.status;
-    betInfo = widget.match.betInfo;
-    bet = widget.match.bet;
+    _date = widget.match.date;
+    _formattedDate = DateTimeUtils.formatDateToSmallDisplay(_date);
+    _homeTeamScore = widget.match.score.fullTime.homeTeam!;
+    _awayTeamScore = widget.match.score.fullTime.awayTeam!;
+    _status = widget.match.status;
+    _betInfo = widget.match.betInfo;
+    _bet = widget.match.bet;
+
+    if (_status == ApiStatus.IN_PLAY || _status == ApiStatus.PAUSED) {
+      _minutes = widget.match.score.minutes;
+      _liveTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+        setState(() {
+          _minutes = _minutes != null ? _minutes! + 1 : null;
+        });
+      });
+    }
 
     // Listen for live data changes if the match is Scheduled or Live
-    if (status == ApiStatus.SCHEDULED || status == ApiStatus.LIVE) {
+    if (_status == ApiStatus.SCHEDULED ||
+        _status == ApiStatus.IN_PLAY ||
+        _status == ApiStatus.PAUSED) {
       final WSApi wsApi = Provider.of<WSApi>(context, listen: false);
       wsApi.addListener(() {
         WSMessage message = wsApi.message;
@@ -43,24 +62,24 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
           if (message.event == WSEvent.MATCH_UPDATE) {
             if (message.type == WSEventType.HOME_TEAM_SCORE) {
               setState(() {
-                homeTeamScore = message.value!;
+                _homeTeamScore = message.value!;
               });
             } else if (message.type == WSEventType.AWAY_TEAM_SCORE) {
               setState(() {
-                awayTeamScore = message.value!;
+                _awayTeamScore = message.value!;
               });
             } else if (message.type == WSEventType.ODDS) {
               setState(() {
-                betInfo = ApiBetInfo.fromJson(message.value!);
+                _betInfo = ApiBetInfo.fromJson(message.value!);
               });
             }
           } else if (message.event == WSEvent.MATCH_START) {
             setState(() {
-              status = ApiStatus.IN_PLAY;
+              _status = ApiStatus.IN_PLAY;
             });
           } else if (message.event == WSEvent.MATCH_END) {
             setState(() {
-              status = ApiStatus.FINISHED;
+              _status = ApiStatus.FINISHED;
             });
           }
         }
@@ -73,9 +92,6 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
     Color team1Color = Theme.of(context).colorScheme.primary;
     Color drawColor = Theme.of(context).colorScheme.secondary;
     Color team2Color = Theme.of(context).colorScheme.tertiary;
-
-    DateTime date = widget.match.date;
-    String formattedDate = DateTimeUtils.formatDateToSmallDisplay(date);
 
     final homeTeamTextStyle = Theme.of(context).textTheme.bodyText2?.copyWith(
         fontWeight: widget.match.score.winner == ApiWinner.HOME_TEAM
@@ -92,7 +108,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
-          child: Text(formattedDate),
+          child: Text(_formattedDate),
         ),
         const Padding(
           padding: EdgeInsets.fromLTRB(0, 6, 0, 0),
@@ -101,31 +117,59 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
       ],
     );
 
-    Row inPlayLayout =
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(6),
-            child: Text(
-              homeTeamScore.toString(),
-              style: homeTeamTextStyle,
+    Row inPlayLayout = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(
+                _homeTeamScore.toString(),
+                style: homeTeamTextStyle,
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(6),
-            child: Text(
-              awayTeamScore.toString(),
-              style: awayTeamTextStyle,
+            Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(
+                _awayTeamScore.toString(),
+                style: awayTeamTextStyle,
+              ),
             ),
-          ),
-        ],
-      ),
-      widget.match.status == ApiStatus.IN_PLAY
-          ? const Padding(padding: EdgeInsets.all(10), child: PulseCircle())
-          : const Padding(padding: EdgeInsets.all(2), child: Icon(Icons.check))
-    ]);
+          ],
+        ),
+        _status == ApiStatus.IN_PLAY
+            ? Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    Text(_minutes.toString() + "'"),
+                    const SizedBox(width: 4),
+                    const PulseCircle(),
+                  ],
+                ),
+              )
+            : _status == ApiStatus.PAUSED
+                ? Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Text(
+                      'Half Time',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText2
+                          ?.copyWith(color: Colors.redAccent),
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Text(
+                      'Full Time',
+                      style: Theme.of(context).textTheme.bodyText2,
+                    ),
+                  ),
+      ],
+    );
 
     void showNewBetModal(ApiBetType betType) async {
       ApiBet? bet = await showModalBottomSheet<ApiBet>(
@@ -137,7 +181,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
               SingleChildScrollView(
                 child: NewBetModal(
                   match: widget.match,
-                  betInfo: betInfo,
+                  betInfo: _betInfo,
                   betType: betType,
                 ),
               ),
@@ -147,7 +191,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
       );
 
       setState(() {
-        this.bet = bet;
+        this._bet = bet;
       });
     }
 
@@ -162,6 +206,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            Text(widget.match.id.toString()),
             Padding(
                 padding: const EdgeInsets.all(8),
                 child: IntrinsicHeight(
@@ -246,10 +291,10 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                         thickness: 1,
                       ),
                       Expanded(
-                        child: widget.match.status == ApiStatus.SCHEDULED
+                        child: _status == ApiStatus.SCHEDULED
                             ? scheduledLayout
                             : inPlayLayout,
-                        flex: 2,
+                        flex: 3,
                       )
                     ],
                   ),
@@ -264,7 +309,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                     child: Row(
                       children: <Widget>[
                         Expanded(
-                          flex: betInfo.resultHomeTeamOdd.round(),
+                          flex: 11 - _betInfo.resultHomeTeamOdd.round(),
                           child: Container(
                             decoration: BoxDecoration(
                               color: team1Color,
@@ -272,13 +317,13 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                           ),
                         ),
                         Expanded(
-                          flex: betInfo.resultDrawOdd.round(),
+                          flex: 11 - _betInfo.resultDrawOdd.round(),
                           child: Container(
                             color: drawColor,
                           ),
                         ),
                         Expanded(
-                          flex: betInfo.resultAwayTeamOdd.round(),
+                          flex: 11 - _betInfo.resultAwayTeamOdd.round(),
                           child: Container(
                             decoration: BoxDecoration(
                               color: team2Color,
@@ -296,27 +341,27 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                       Expanded(
                         child: TextButton(
                           child: Text(
-                            'E1 - x${(betInfo.resultHomeTeamOdd * 100).roundToDouble() / 100}',
+                            'E1 - x${(_betInfo.resultHomeTeamOdd * 100).roundToDouble() / 100}',
                           ),
                           style: ButtonStyle(
-                            foregroundColor: bet?.type ==
+                            foregroundColor: _bet?.type ==
                                     ApiBetType.RESULT_HOME_TEAM
                                 ? MaterialStateProperty.all<Color>(
                                     Theme.of(context).colorScheme.onPrimary)
                                 : MaterialStateProperty.all<Color>(team1Color),
-                            backgroundColor: bet?.type ==
+                            backgroundColor: _bet?.type ==
                                     ApiBetType.RESULT_HOME_TEAM
                                 ? MaterialStateProperty.all<Color>(team1Color)
                                 : null,
                             textStyle: MaterialStateProperty.all(
                               Theme.of(context).textTheme.button?.copyWith(
-                                    fontWeight: bet == null
+                                    fontWeight: _bet == null
                                         ? FontWeight.w700
                                         : FontWeight.w200,
                                   ),
                             ),
                           ),
-                          onPressed: bet != null
+                          onPressed: _bet != null
                               ? null
                               : () {
                                   showNewBetModal(ApiBetType.RESULT_HOME_TEAM);
@@ -326,25 +371,27 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                       Expanded(
                         child: TextButton(
                           child: Text(
-                            'N - x${(betInfo.resultDrawOdd * 100).roundToDouble() / 100}',
+                            'N - x${(_betInfo.resultDrawOdd * 100).roundToDouble() / 100}',
                           ),
                           style: ButtonStyle(
-                            foregroundColor: bet?.type == ApiBetType.RESULT_DRAW
+                            foregroundColor: _bet?.type ==
+                                    ApiBetType.RESULT_DRAW
                                 ? MaterialStateProperty.all<Color>(
                                     Theme.of(context).colorScheme.onPrimary)
                                 : MaterialStateProperty.all<Color>(drawColor),
-                            backgroundColor: bet?.type == ApiBetType.RESULT_DRAW
+                            backgroundColor: _bet?.type ==
+                                    ApiBetType.RESULT_DRAW
                                 ? MaterialStateProperty.all<Color>(drawColor)
                                 : null,
                             textStyle: MaterialStateProperty.all(
                               Theme.of(context).textTheme.button?.copyWith(
-                                    fontWeight: bet == null
+                                    fontWeight: _bet == null
                                         ? FontWeight.w700
                                         : FontWeight.w200,
                                   ),
                             ),
                           ),
-                          onPressed: bet != null
+                          onPressed: _bet != null
                               ? null
                               : () {
                                   showNewBetModal(ApiBetType.RESULT_DRAW);
@@ -354,27 +401,27 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                       Expanded(
                         child: TextButton(
                           child: Text(
-                            'E2 - x${(betInfo.resultAwayTeamOdd * 100).roundToDouble() / 100}',
+                            'E2 - x${(_betInfo.resultAwayTeamOdd * 100).roundToDouble() / 100}',
                           ),
                           style: ButtonStyle(
-                            foregroundColor: bet?.type ==
+                            foregroundColor: _bet?.type ==
                                     ApiBetType.RESULT_AWAY_TEAM
                                 ? MaterialStateProperty.all<Color>(
                                     Theme.of(context).colorScheme.onPrimary)
                                 : MaterialStateProperty.all<Color>(team2Color),
-                            backgroundColor: bet?.type ==
+                            backgroundColor: _bet?.type ==
                                     ApiBetType.RESULT_AWAY_TEAM
                                 ? MaterialStateProperty.all<Color>(team2Color)
                                 : null,
                             textStyle: MaterialStateProperty.all(
                               Theme.of(context).textTheme.button?.copyWith(
-                                    fontWeight: bet == null
+                                    fontWeight: _bet == null
                                         ? FontWeight.w700
                                         : FontWeight.w200,
                                   ),
                             ),
                           ),
-                          onPressed: bet != null
+                          onPressed: _bet != null
                               ? null
                               : () {
                                   showNewBetModal(ApiBetType.RESULT_AWAY_TEAM);

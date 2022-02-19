@@ -7,7 +7,6 @@ import '../utilities/date_time_utils.dart';
 
 enum ApiStatus {
   SCHEDULED,
-  LIVE,
   IN_PLAY,
   PAUSED,
   FINISHED,
@@ -33,10 +32,12 @@ class ApiScoreElement {
 class ApiScore {
   final ApiWinner winner;
   final ApiScoreElement fullTime;
+  final int? minutes;
 
   const ApiScore({
     required this.winner,
     required this.fullTime,
+    required this.minutes,
   });
 
   factory ApiScore.fromJson(Map<String, dynamic> json) {
@@ -49,7 +50,10 @@ class ApiScore {
     }
 
     return ApiScore(
-        winner: winner, fullTime: ApiScoreElement.fromJson(json['fullTime']));
+      winner: winner,
+      fullTime: ApiScoreElement.fromJson(json['fullTime']),
+      minutes: json['minutes'],
+    );
   }
 }
 
@@ -383,7 +387,7 @@ class ApiUser {
 
 class Api {
   static const String endpoint =
-      '10.143.197.38'; // '192.168.1.105'; //  '192.168.39.28';
+      '192.168.1.105'; // '192.168.1.105'; //  '192.168.39.28';
 
   static const int port = 80;
 

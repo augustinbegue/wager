@@ -7,6 +7,7 @@ enum WSEvent {
   MATCH_START,
   MATCH_END,
   MATCH_UPDATE,
+  BALANCE_UPDATE,
 }
 
 enum WSEventType {
@@ -17,7 +18,7 @@ enum WSEventType {
 
 class WSMessage {
   WSEvent event;
-  int matchId;
+  int? matchId;
   WSEventType? type;
   dynamic? value;
 
@@ -36,6 +37,8 @@ class WSMessage {
       case 'match-update':
         event = WSEvent.MATCH_UPDATE;
         break;
+      case 'balance-update':
+        event = WSEvent.BALANCE_UPDATE;
     }
 
     WSEventType? type;
@@ -70,7 +73,7 @@ class WSMessage {
 }
 
 class WSApi extends ChangeNotifier {
-  static const String endpoint = '10.143.197.38'; // '192.168.1.105';
+  static const String endpoint = '192.168.1.105'; // '10.143.197.38';
   static const int port = 4000;
 
   late WebSocketChannel channel;
@@ -86,8 +89,10 @@ class WSApi extends ChangeNotifier {
     ));
 
     channel.stream.listen((message) {
-      print(message);
+      print('WS: $message');
       this.message = WSMessage.fromJson(jsonDecode(message));
+      print(
+          'WS: ${this.message.event}, ${this.message.matchId}, ${this.message.type}, ${this.message.value}');
       notifyListeners();
     });
   }
@@ -96,8 +101,15 @@ class WSApi extends ChangeNotifier {
     channel.sink.add(message);
   }
 
-  void send(Object message) {
+  void send(dynamic message) {
     _send(json.encode(message));
+  }
+
+  void subscribeToUser(int userId) {
+    send({
+      'request': 'user-subscribe',
+      'userId': userId,
+    });
   }
 
   @override

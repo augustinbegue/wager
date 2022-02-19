@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../../../prisma";
 import { AuthenticatedRequest, BetsNewBody } from "../../../../types/api";
 import { computeNewOdds } from "../../services/bets/userBets";
+import ipc from "node-ipc";
 
 export async function newBetController(req: Request, res: Response) {
     let matchId = parseInt(req.params.matchId);
@@ -96,6 +97,8 @@ export async function newBetController(req: Request, res: Response) {
                     }
                 }
             })
+
+            ipc.of['ws'].emit('balance-update', { userId: authReq.user.id, balance: -1 * bet.amount });
 
             // Update odds
             computeNewOdds(betInfo);

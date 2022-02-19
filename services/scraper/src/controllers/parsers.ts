@@ -64,6 +64,7 @@ export function parseScrapedMatches(scrapedMatches: ScrapedMatch[], competition:
                 homeTeamScore: fullTime.homeTeam,
                 awayTeamScore: fullTime.awayTeam,
                 duration: duration,
+                minutes: scrapedMatch.elapsedMinutes ? parseInt(scrapedMatch.elapsedMinutes) : null,
                 competitionId: competition.id,
                 competition: competition
             };

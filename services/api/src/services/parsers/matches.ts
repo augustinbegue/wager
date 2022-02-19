@@ -33,6 +33,7 @@ export function parseMatches(matches: MatchIncludesAll[]): ApiMatchCondensed[] {
             score: {
                 winner: match.winner,
                 duration: match.duration,
+                minutes: match.minutes,
                 fullTime: {
                     homeTeam: match.homeTeamScore,
                     awayTeam: match.awayTeamScore

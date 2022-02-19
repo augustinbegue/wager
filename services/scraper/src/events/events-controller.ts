@@ -62,7 +62,7 @@ export class EventsController {
         let next12HMatches = matches.filter((match) => {
             let date = match.date.getTime();
 
-            return match.status === 'SCHEDULED' && date < cutoff || match.status === 'IN_PLAY';
+            return match.status === 'SCHEDULED' && date < cutoff || match.status === 'IN_PLAY' || match.status === 'PAUSED';
         });
 
         // Start timers for each match in the next 12 hours

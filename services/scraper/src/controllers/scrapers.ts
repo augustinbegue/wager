@@ -452,6 +452,10 @@ export async function scrapeResults(config: ScraperConfig, page: puppeteer.Page,
 }
 
 export async function scrapeMatch(match: Match & { homeTeam: Team, awayTeam: Team }, page: puppeteer.Page, baseUrl: string, path: string) {
+    if (!match)
+        throw new Error("Match is undefined");
+
+
     await page.goto(baseUrl + path, { waitUntil: 'networkidle2' });
 
     await closeBanners(page);

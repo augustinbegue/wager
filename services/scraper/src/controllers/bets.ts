@@ -1,4 +1,5 @@
 import { betType } from "@prisma/client";
+import ipc from "node-ipc";
 import { prisma } from "../../../prisma";
 
 export async function closeBets(matchId: number) {
@@ -83,7 +84,8 @@ export async function computeBets(matchId: number) {
                 }
             });
 
-            // TODO: Notify user that he has won a bet
+            console.log(`New balance evolution for user ${bet.user.id}: ${bet.amount * odd}`);
+            ipc.of['ws'].emit('balance-update', { userId: bet.user.id, balance: bet.amount * odd });
         }
     });
 }

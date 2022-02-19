@@ -25,6 +25,7 @@ export async function upsertMatch(match: Match, seasonId: number, eventsControll
                 homeTeamScore: match.homeTeamScore,
                 awayTeamScore: match.awayTeamScore,
                 duration: match.duration,
+                minutes: match.minutes,
                 status: match.status,
                 betInfo: {
                     upsert: {
@@ -101,6 +102,7 @@ export async function upsertMatch(match: Match, seasonId: number, eventsControll
                 homeTeamScore: match.homeTeamScore,
                 awayTeamScore: match.awayTeamScore,
                 duration: match.duration,
+                minutes: match.minutes,
                 competitionId: match.competitionId,
             }
         });

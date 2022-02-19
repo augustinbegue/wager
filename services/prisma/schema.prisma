@@ -75,6 +75,7 @@ model Match {
   homeTeamScore Int?
   awayTeamScore Int?
   duration      scoreType?
+  minutes       Int?
   competitionId Int
   competition   Competition @relation(fields: [competitionId], references: [id])
   betInfo       BetInfo?

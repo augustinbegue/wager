@@ -7,6 +7,7 @@ import { prisma } from '../../../prisma';
 import { parseScrapedMatches } from '../controllers/parsers';
 import { upsertMatch } from '../controllers/db';
 import { ScrapedMatch } from '../../../types/scraper';
+import { computeBets } from '../controllers/bets';
 
 interface DataEvents {
     'match-start': (matchId: number) => void;
@@ -76,6 +77,9 @@ export class EventsController {
 
         // Update the standings
         computeStandings();
+
+        // Compute uncomputed bets
+        computeBets();
 
         // Update again in 12 hours
         setTimeout(() => {

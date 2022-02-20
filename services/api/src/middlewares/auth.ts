@@ -7,6 +7,7 @@ export async function requireAuthentication(req: Request, res: Response, next: F
     const { authorization } = req.headers;
 
     if (!authorization) {
+        console.log("No authorization header");
         return res.status(401).send({ message: "Unauthorized: Missing token." });
     }
 

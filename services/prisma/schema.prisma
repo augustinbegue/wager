@@ -158,6 +158,7 @@ model Bet {
   type      betType
   amount    Int
   goals     Int?
+  computed  Boolean @default(false)
 
   @@map("bets")
 }

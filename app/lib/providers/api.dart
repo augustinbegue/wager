@@ -386,8 +386,7 @@ class ApiUser {
 }
 
 class Api {
-  static const String endpoint =
-      '192.168.1.105'; // '192.168.1.105'; //  '192.168.39.28';
+  static const String endpoint = 'localhost';
 
   static const int port = 80;
 

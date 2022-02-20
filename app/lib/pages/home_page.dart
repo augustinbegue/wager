@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:wager_app/services/authentication_service.dart';
 import 'package:wager_app/widgets/matches/match_list_horizontal.dart';
 import 'package:wager_app/widgets/matches/match_list_suggested.dart';
 
@@ -10,6 +12,21 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late String name = "";
+  late AuthenticationService auth;
+
+  @override
+  void initState() {
+    super.initState();
+
+    auth = Provider.of<AuthenticationService>(context, listen: false);
+    auth.addListener(() {
+      setState(() {
+        name = auth.currentUser?.name ?? "";
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +41,7 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
-                    'Welcome Back Augustin,',
+                    'Welcome Back $name',
                     textAlign: TextAlign.left,
                     style: Theme.of(context).textTheme.headline1?.copyWith(
                           color: Theme.of(context).colorScheme.primary,

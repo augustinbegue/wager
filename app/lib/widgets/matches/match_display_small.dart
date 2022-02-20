@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wager_app/providers/api.dart';
 import 'package:wager_app/providers/ws_api.dart';
+import 'package:wager_app/router.gr.dart';
 import 'package:wager_app/utilities/date_time_utils.dart';
 import 'package:wager_app/widgets/bets/new_bet_modal.dart';
 
@@ -201,239 +203,255 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(0),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(widget.match.id.toString()),
-            Padding(
-                padding: const EdgeInsets.all(8),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  CachedNetworkImage(
-                                    placeholder: (context, url) =>
-                                        const Padding(
-                                      padding: EdgeInsets.all(2),
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                    imageUrl: Uri(
-                                      scheme: 'http',
-                                      host: Api.endpoint,
-                                      path: widget.match.homeTeam.crestUrl,
-                                    ).toString(),
-                                    width:
-                                        PlatformDetection.isMobile() ? 22 : 36,
-                                    height:
-                                        PlatformDetection.isMobile() ? 22 : 36,
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(8, 0, 0, 0),
-                                    child: Text(
-                                      widget.match.homeTeam.name,
-                                      style: homeTeamTextStyle,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  CachedNetworkImage(
-                                    placeholder: (context, url) =>
-                                        const Padding(
-                                      padding: EdgeInsets.all(2),
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                    imageUrl: Uri(
-                                      scheme: 'http',
-                                      host: Api.endpoint,
-                                      path: widget.match.awayTeam.crestUrl,
-                                    ).toString(),
-                                    width:
-                                        PlatformDetection.isMobile() ? 22 : 36,
-                                    height:
-                                        PlatformDetection.isMobile() ? 22 : 36,
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(8, 0, 0, 0),
-                                    child: Text(
-                                      widget.match.awayTeam.name,
-                                      style: awayTeamTextStyle,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const VerticalDivider(
-                        width: 32,
-                        thickness: 1,
-                      ),
-                      Expanded(
-                        child: _status == ApiStatus.SCHEDULED
-                            ? scheduledLayout
-                            : inPlayLayout,
-                        flex: 3,
-                      )
-                    ],
-                  ),
-                )),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 4,
+      child: InkWell(
+        onTap: () {
+          context.pushRoute(DetailsRoute(matchId: widget.match.id));
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(widget.match.id.toString()),
+              Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: IntrinsicHeight(
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    CachedNetworkImage(
+                                      placeholder: (context, url) =>
+                                          const Padding(
+                                        padding: EdgeInsets.all(2),
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      imageUrl: Uri(
+                                        scheme: 'http',
+                                        host: Api.endpoint,
+                                        path: widget.match.homeTeam.crestUrl,
+                                      ).toString(),
+                                      width: PlatformDetection.isMobile()
+                                          ? 22
+                                          : 36,
+                                      height: PlatformDetection.isMobile()
+                                          ? 22
+                                          : 36,
+                                    ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                                      child: Text(
+                                        widget.match.homeTeam.name,
+                                        style: homeTeamTextStyle,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    CachedNetworkImage(
+                                      placeholder: (context, url) =>
+                                          const Padding(
+                                        padding: EdgeInsets.all(2),
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      imageUrl: Uri(
+                                        scheme: 'http',
+                                        host: Api.endpoint,
+                                        path: widget.match.awayTeam.crestUrl,
+                                      ).toString(),
+                                      width: PlatformDetection.isMobile()
+                                          ? 22
+                                          : 36,
+                                      height: PlatformDetection.isMobile()
+                                          ? 22
+                                          : 36,
+                                    ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                                      child: Text(
+                                        widget.match.awayTeam.name,
+                                        style: awayTeamTextStyle,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const VerticalDivider(
+                          width: 32,
+                          thickness: 1,
+                        ),
+                        Expanded(
+                          child: _status == ApiStatus.SCHEDULED
+                              ? scheduledLayout
+                              : inPlayLayout,
+                          flex: 3,
+                        )
+                      ],
+                    ),
+                  )),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 4,
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            flex: 11 - _betInfo.resultHomeTeamOdd.round(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: team1Color,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 11 - _betInfo.resultDrawOdd.round(),
+                            child: Container(
+                              color: drawColor,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 11 - _betInfo.resultAwayTeamOdd.round(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: team2Color,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 8,
+                    ),
+                    Row(
                       children: <Widget>[
                         Expanded(
-                          flex: 11 - _betInfo.resultHomeTeamOdd.round(),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: team1Color,
+                          child: TextButton(
+                            child: Text(
+                              'E1 - x${(_betInfo.resultHomeTeamOdd * 100).roundToDouble() / 100}',
                             ),
+                            style: ButtonStyle(
+                              foregroundColor: _bet?.type ==
+                                      ApiBetType.RESULT_HOME_TEAM
+                                  ? MaterialStateProperty.all<Color>(
+                                      Theme.of(context).colorScheme.onPrimary)
+                                  : MaterialStateProperty.all<Color>(
+                                      team1Color),
+                              backgroundColor: _bet?.type ==
+                                      ApiBetType.RESULT_HOME_TEAM
+                                  ? MaterialStateProperty.all<Color>(team1Color)
+                                  : null,
+                              textStyle: MaterialStateProperty.all(
+                                Theme.of(context).textTheme.button?.copyWith(
+                                      fontWeight:
+                                          _bet == null && _betInfo.opened
+                                              ? FontWeight.w700
+                                              : FontWeight.w200,
+                                    ),
+                              ),
+                            ),
+                            onPressed: _bet != null || !_betInfo.opened
+                                ? null
+                                : () {
+                                    showNewBetModal(
+                                        ApiBetType.RESULT_HOME_TEAM);
+                                  },
                           ),
                         ),
                         Expanded(
-                          flex: 11 - _betInfo.resultDrawOdd.round(),
-                          child: Container(
-                            color: drawColor,
+                          child: TextButton(
+                            child: Text(
+                              'N - x${(_betInfo.resultDrawOdd * 100).roundToDouble() / 100}',
+                            ),
+                            style: ButtonStyle(
+                              foregroundColor: _bet?.type ==
+                                      ApiBetType.RESULT_DRAW
+                                  ? MaterialStateProperty.all<Color>(
+                                      Theme.of(context).colorScheme.onPrimary)
+                                  : MaterialStateProperty.all<Color>(drawColor),
+                              backgroundColor: _bet?.type ==
+                                      ApiBetType.RESULT_DRAW
+                                  ? MaterialStateProperty.all<Color>(drawColor)
+                                  : null,
+                              textStyle: MaterialStateProperty.all(
+                                Theme.of(context).textTheme.button?.copyWith(
+                                      fontWeight:
+                                          _bet == null && _betInfo.opened
+                                              ? FontWeight.w700
+                                              : FontWeight.w200,
+                                    ),
+                              ),
+                            ),
+                            onPressed: _bet != null || !_betInfo.opened
+                                ? null
+                                : () {
+                                    showNewBetModal(ApiBetType.RESULT_DRAW);
+                                  },
                           ),
                         ),
                         Expanded(
-                          flex: 11 - _betInfo.resultAwayTeamOdd.round(),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: team2Color,
+                          child: TextButton(
+                            child: Text(
+                              'E2 - x${(_betInfo.resultAwayTeamOdd * 100).roundToDouble() / 100}',
                             ),
+                            style: ButtonStyle(
+                              foregroundColor: _bet?.type ==
+                                      ApiBetType.RESULT_AWAY_TEAM
+                                  ? MaterialStateProperty.all<Color>(
+                                      Theme.of(context).colorScheme.onPrimary)
+                                  : MaterialStateProperty.all<Color>(
+                                      team2Color),
+                              backgroundColor: _bet?.type ==
+                                      ApiBetType.RESULT_AWAY_TEAM
+                                  ? MaterialStateProperty.all<Color>(team2Color)
+                                  : null,
+                              textStyle: MaterialStateProperty.all(
+                                Theme.of(context).textTheme.button?.copyWith(
+                                      fontWeight:
+                                          _bet == null && _betInfo.opened
+                                              ? FontWeight.w700
+                                              : FontWeight.w200,
+                                    ),
+                              ),
+                            ),
+                            onPressed: _bet != null || !_betInfo.opened
+                                ? null
+                                : () {
+                                    showNewBetModal(
+                                        ApiBetType.RESULT_AWAY_TEAM);
+                                  },
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(
-                    height: 8,
-                  ),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: TextButton(
-                          child: Text(
-                            'E1 - x${(_betInfo.resultHomeTeamOdd * 100).roundToDouble() / 100}',
-                          ),
-                          style: ButtonStyle(
-                            foregroundColor: _bet?.type ==
-                                    ApiBetType.RESULT_HOME_TEAM
-                                ? MaterialStateProperty.all<Color>(
-                                    Theme.of(context).colorScheme.onPrimary)
-                                : MaterialStateProperty.all<Color>(team1Color),
-                            backgroundColor: _bet?.type ==
-                                    ApiBetType.RESULT_HOME_TEAM
-                                ? MaterialStateProperty.all<Color>(team1Color)
-                                : null,
-                            textStyle: MaterialStateProperty.all(
-                              Theme.of(context).textTheme.button?.copyWith(
-                                    fontWeight: _bet == null
-                                        ? FontWeight.w700
-                                        : FontWeight.w200,
-                                  ),
-                            ),
-                          ),
-                          onPressed: _bet != null
-                              ? null
-                              : () {
-                                  showNewBetModal(ApiBetType.RESULT_HOME_TEAM);
-                                },
-                        ),
-                      ),
-                      Expanded(
-                        child: TextButton(
-                          child: Text(
-                            'N - x${(_betInfo.resultDrawOdd * 100).roundToDouble() / 100}',
-                          ),
-                          style: ButtonStyle(
-                            foregroundColor: _bet?.type ==
-                                    ApiBetType.RESULT_DRAW
-                                ? MaterialStateProperty.all<Color>(
-                                    Theme.of(context).colorScheme.onPrimary)
-                                : MaterialStateProperty.all<Color>(drawColor),
-                            backgroundColor: _bet?.type ==
-                                    ApiBetType.RESULT_DRAW
-                                ? MaterialStateProperty.all<Color>(drawColor)
-                                : null,
-                            textStyle: MaterialStateProperty.all(
-                              Theme.of(context).textTheme.button?.copyWith(
-                                    fontWeight: _bet == null
-                                        ? FontWeight.w700
-                                        : FontWeight.w200,
-                                  ),
-                            ),
-                          ),
-                          onPressed: _bet != null
-                              ? null
-                              : () {
-                                  showNewBetModal(ApiBetType.RESULT_DRAW);
-                                },
-                        ),
-                      ),
-                      Expanded(
-                        child: TextButton(
-                          child: Text(
-                            'E2 - x${(_betInfo.resultAwayTeamOdd * 100).roundToDouble() / 100}',
-                          ),
-                          style: ButtonStyle(
-                            foregroundColor: _bet?.type ==
-                                    ApiBetType.RESULT_AWAY_TEAM
-                                ? MaterialStateProperty.all<Color>(
-                                    Theme.of(context).colorScheme.onPrimary)
-                                : MaterialStateProperty.all<Color>(team2Color),
-                            backgroundColor: _bet?.type ==
-                                    ApiBetType.RESULT_AWAY_TEAM
-                                ? MaterialStateProperty.all<Color>(team2Color)
-                                : null,
-                            textStyle: MaterialStateProperty.all(
-                              Theme.of(context).textTheme.button?.copyWith(
-                                    fontWeight: _bet == null
-                                        ? FontWeight.w700
-                                        : FontWeight.w200,
-                                  ),
-                            ),
-                          ),
-                          onPressed: _bet != null
-                              ? null
-                              : () {
-                                  showNewBetModal(ApiBetType.RESULT_AWAY_TEAM);
-                                },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            )
-          ],
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

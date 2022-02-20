@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:wager_app/pages/default_page.dart';
 import 'package:wager_app/pages/home_page.dart';
 import 'package:wager_app/pages/matches/competition_page.dart';
+import 'package:wager_app/pages/matches/details_page.dart';
 import 'package:wager_app/pages/matches_page.dart';
 import 'package:wager_app/pages/profile_page.dart';
 import 'package:wager_app/pages/ranking_page.dart';
@@ -28,6 +29,7 @@ import 'package:wager_app/pages/ranking_page.dart';
           path: 'matches',
           children: [
             AutoRoute(path: '', page: MatchesPage),
+            AutoRoute(path: ':matchId', page: DetailsPage),
             AutoRoute(
                 path: 'competition/:competitionId', page: CompetitionPage),
           ]),

@@ -15,6 +15,7 @@ import '../decorations/pulse_circle.dart';
 
 class MatchWidgetSmall extends StatefulWidget {
   final ApiMatchCondensed match;
+
   const MatchWidgetSmall({Key? key, required this.match}) : super(key: key);
 
   @override
@@ -32,6 +33,16 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
   late Timer _liveTimer;
   ApiBet? _bet;
 
+  void startMatch() {
+    _minutes = widget.match.score.minutes ?? 1;
+
+    _liveTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
+      setState(() {
+        _minutes = _minutes != null ? _minutes! + 1 : null;
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -44,12 +55,9 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
     _bet = widget.match.bet;
 
     if (_status == ApiStatus.IN_PLAY || _status == ApiStatus.PAUSED) {
-      _minutes = widget.match.score.minutes;
-      _liveTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-        setState(() {
-          _minutes = _minutes != null ? _minutes! + 1 : null;
-        });
-      });
+      startMatch();
+    } else {
+      _minutes = 0;
     }
 
     // Listen for live data changes if the match is Scheduled or Live
@@ -79,6 +87,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
             setState(() {
               _status = ApiStatus.IN_PLAY;
             });
+            startMatch();
           } else if (message.event == WSEvent.MATCH_END) {
             setState(() {
               _status = ApiStatus.FINISHED;
@@ -239,6 +248,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                       imageUrl: Uri(
                                         scheme: 'http',
                                         host: Api.endpoint,
+                                        port: Api.port,
                                         path: widget.match.homeTeam.crestUrl,
                                       ).toString(),
                                       width: PlatformDetection.isMobile()
@@ -273,6 +283,7 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                       imageUrl: Uri(
                                         scheme: 'http',
                                         host: Api.endpoint,
+                                        port: Api.port,
                                         path: widget.match.awayTeam.crestUrl,
                                       ).toString(),
                                       width: PlatformDetection.isMobile()
@@ -372,6 +383,9 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                               : FontWeight.w200,
                                     ),
                               ),
+                              elevation: _bet == null && _betInfo.opened
+                                  ? MaterialStateProperty.all(1)
+                                  : null,
                             ),
                             onPressed: _bet != null || !_betInfo.opened
                                 ? null
@@ -404,6 +418,9 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                               : FontWeight.w200,
                                     ),
                               ),
+                              elevation: _bet == null && _betInfo.opened
+                                  ? MaterialStateProperty.all(1)
+                                  : null,
                             ),
                             onPressed: _bet != null || !_betInfo.opened
                                 ? null
@@ -436,6 +453,9 @@ class _MatchWidgetSmallState extends State<MatchWidgetSmall> {
                                               : FontWeight.w200,
                                     ),
                               ),
+                              elevation: _bet == null && _betInfo.opened
+                                  ? MaterialStateProperty.all(1)
+                                  : null,
                             ),
                             onPressed: _bet != null || !_betInfo.opened
                                 ? null

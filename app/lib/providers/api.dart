@@ -386,9 +386,9 @@ class ApiUser {
 }
 
 class Api {
-  static const String endpoint = 'localhost';
+  static const String endpoint = '192.168.1.120';
 
-  static const int port = 80;
+  static const int port = 3000;
 
   static Future<Map<String, String>> getAuthHeader() async {
     String? token;
@@ -520,6 +520,25 @@ class Api {
           .toList();
     } else {
       throw Exception('Failed to load matches.');
+    }
+  }
+
+  static Future<ApiMatchCondensed> getMatch(int matchId) async {
+    Uri uri = Uri(
+        scheme: 'http', host: endpoint, path: '/matches/$matchId', port: port);
+
+    final response = await http.get(uri, headers: {
+      ...await getAuthHeader(),
+    });
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+
+      dynamic match = json['match'];
+
+      return ApiMatchCondensed.fromJson(match);
+    } else {
+      throw Exception('Failed to load match $matchId');
     }
   }
 

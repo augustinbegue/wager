@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:auto_route/empty_router_widgets.dart';
 import 'package:wager_app/pages/default_page.dart';
 import 'package:wager_app/pages/home_page.dart';
 import 'package:wager_app/pages/matches/competition_page.dart';

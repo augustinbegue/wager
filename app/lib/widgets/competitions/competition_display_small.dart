@@ -31,6 +31,7 @@ class CompetitionWidgetSmall extends StatelessWidget {
                 imageUrl: Uri(
                   scheme: 'http',
                   host: Api.endpoint,
+                  port: Api.port,
                   path: competition.emblemUrl,
                 ).toString(),
                 width: 50,

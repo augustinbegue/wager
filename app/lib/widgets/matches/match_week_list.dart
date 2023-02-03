@@ -70,6 +70,7 @@ class _MatchWeekListState extends State<MatchWeekList> {
                     imageUrl: Uri(
                       scheme: 'http',
                       host: Api.endpoint,
+                      port: Api.port,
                       path: competitionMatchesList.competition.emblemUrl,
                     ).toString(),
                     height: PlatformDetection.isMobile() ? 34 : 44,

@@ -55,6 +55,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
                       imageUrl: Uri(
                         scheme: 'http',
                         host: Api.endpoint,
+                        port: Api.port,
                         path: snapshot.data?.emblemUrl ??
                             'static/images/fallback.png',
                       ).toString(),

@@ -73,7 +73,7 @@ class WSMessage {
 }
 
 class WSApi extends ChangeNotifier {
-  static const String endpoint = 'localhost';
+  static const String endpoint = '192.168.1.120';
   static const int port = 4000;
 
   late WebSocketChannel channel;

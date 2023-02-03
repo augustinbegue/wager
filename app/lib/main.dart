@@ -84,12 +84,14 @@ class WagerApp extends StatelessWidget {
     final ThemeData _light = ThemeData(
       colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.greenAccent, brightness: Brightness.dark),
+      // useMaterial3: true,
     ).copyWith(textTheme: _textTheme);
 
     final ThemeData _dark = ThemeData(
       colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.greenAccent, brightness: Brightness.dark),
       brightness: Brightness.dark,
+      // useMaterial3: true,
     ).copyWith(textTheme: _textTheme);
 
     return MultiProvider(

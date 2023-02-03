@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:wager_app/widgets/matches/match_display_details.dart';
+
+import '../../providers/api.dart';
 
 class DetailsPage extends StatefulWidget {
   const DetailsPage({
@@ -14,78 +19,28 @@ class DetailsPage extends StatefulWidget {
 }
 
 class _DetailsPageState extends State<DetailsPage> {
+  late Future<ApiMatchCondensed> match;
+
+  @override
+  void initState() {
+    super.initState();
+    match = Api.getMatch(widget.matchId);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(128),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        children: [
-                          Text('Image'),
-                          Text(
-                            'Paris SG',
-                            style: Theme.of(context).textTheme.headline6,
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            '3 - 0',
-                            style: Theme.of(context).textTheme.headline4,
-                          ),
-                          Text('date'),
-                          Text('matchday'),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text('Image'),
-                          Text(
-                            'Paris SG',
-                            style: Theme.of(context).textTheme.headline6,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                TabBar(
-                  tabs: const <Widget>[
-                    Tab(
-                      text: 'Match',
-                    ),
-                    Tab(
-                      text: 'Head 2 Head',
-                    ),
-                    Tab(
-                      text: 'Standings',
-                    )
-                  ],
-                  indicatorColor: Theme.of(context).colorScheme.primary,
-                ),
-              ],
-            ),
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            Text('Match'),
-            Text('Head 2 Head'),
-            Text('Standings'),
-          ],
-        ),
-      ),
-    );
+    return FutureBuilder<ApiMatchCondensed>(
+        future: match,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Text("${snapshot.error}");
+          }
+
+          return MatchWidgetDetails(match: snapshot.data!);
+        });
   }
 }

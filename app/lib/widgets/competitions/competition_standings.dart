@@ -87,6 +87,7 @@ class _CompetitionStandingsState extends State<CompetitionStandings> {
                               imageUrl: Uri(
                                 scheme: 'http',
                                 host: Api.endpoint,
+                                port: Api.port,
                                 path: standings[i].team.crestUrl,
                               ).toString(),
                               height: PlatformDetection.isMobile() ? 20 : 24,

@@ -12,10 +12,10 @@ import {
 } from "../../../types/db";
 import { upsertMatch } from "./db";
 import { EventsController } from "../events/events-controller";
+import e from "cors";
 
 export async function scrapeData(config: ScraperConfig) {
     const baseUrl = process.env.SCRAPING_URL;
-    const headless = !config.debug;
 
     let startTime = new Date();
 
@@ -24,7 +24,7 @@ export async function scrapeData(config: ScraperConfig) {
     }
 
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: !config.debug,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
         defaultViewport: {
             width: 1920,
@@ -34,14 +34,24 @@ export async function scrapeData(config: ScraperConfig) {
 
     let matches: Match[] = [];
     try {
-        let promises = config.leagues.map((path) => {
-            return scrapePath(browser, config, baseUrl, path);
-        });
+        if (!config.debug) {
+            let promises = config.leagues.map((path) => {
+                return scrapePath(browser, config, baseUrl, path);
+            });
 
-        let data = await Promise.all(promises);
-        for (let i = 0; i < data.length; i++) {
-            const m = data[i];
-            matches = [...matches, ...m];
+            let data = await Promise.all(promises);
+            for (let i = 0; i < data.length; i++) {
+                const m = data[i];
+                matches = [...matches, ...m];
+            }
+        } else {
+            for (let i = 0; i < config.leagues.length; i++) {
+                const path = config.leagues[i];
+
+                let m = await scrapePath(browser, config, baseUrl, path);
+
+                matches = [...matches, ...m];
+            }
         }
     } catch (error) {
         console.error(error);
@@ -763,32 +773,56 @@ export async function scrapeTeams(
     await closeBanners(page);
 
     let scrapedTeams: ScrapedTeam[] = await page.evaluate(() => {
-        let container = document.querySelector(
-            "#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body",
-        ) as HTMLDivElement;
+        let containers = [
+            document.querySelector(
+                "#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body",
+            ) as HTMLDivElement,
+        ];
 
+        if (containers.length === 0) {
+            // Tournament Based Competition
+            let groupStageLink = document.querySelector(
+                "#tournament-table > div.tournamentStages > a:nth-child(3)",
+            ) as HTMLAnchorElement;
+            let playOffsLink = document.querySelector(
+                "#tournament-table > div.tournamentStages > a:nth-child(4)",
+            ) as HTMLAnchorElement;
+
+            if (groupStageLink) {
+                groupStageLink.click();
+
+                containers = Array.from(
+                    document.querySelectorAll(".ui-table__body"),
+                ) as HTMLDivElement[];
+            }
+        }
+
+        // Standings Based Competition
         let teams = [];
-        for (let i = 0; i < container.childNodes.length; i++) {
-            const element = container.childNodes[i] as HTMLDivElement;
+        for (let ci = 0; ci < containers.length; ci++) {
+            const container = containers[ci];
+            for (let i = 0; i < container.childNodes.length; i++) {
+                const element = container.childNodes[i] as HTMLDivElement;
 
-            let teamEl = element.querySelector(
-                ".table__cell--participant",
-            ) as HTMLDivElement;
+                let teamEl = element.querySelector(
+                    ".table__cell--participant",
+                ) as HTMLDivElement;
 
-            let teamName = (
-                teamEl.querySelector(
-                    ".tableCellParticipant__name",
-                ) as HTMLDivElement
-            ).innerText;
-            let teamCrestUrl = (
-                (
+                let teamName = (
                     teamEl.querySelector(
-                        ".tableCellParticipant__image",
-                    ) as HTMLAnchorElement
-                ).childNodes[0] as HTMLImageElement
-            ).src;
+                        ".tableCellParticipant__name",
+                    ) as HTMLDivElement
+                ).innerText;
+                let teamCrestUrl = (
+                    (
+                        teamEl.querySelector(
+                            ".tableCellParticipant__image",
+                        ) as HTMLAnchorElement
+                    ).childNodes[0] as HTMLImageElement
+                ).src;
 
-            teams.push({ name: teamName, crestUrl: teamCrestUrl });
+                teams.push({ name: teamName, crestUrl: teamCrestUrl });
+            }
         }
 
         return teams;

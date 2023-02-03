@@ -1,6 +1,6 @@
-import { status, winner, scoreType, User, betType } from '@prisma/client';
-import { Request, Response } from 'express';
-import { DecodedIdToken } from 'firebase-admin/lib/auth/token-verifier';
+import { status, winner, scoreType, User, betType } from "@prisma/client";
+import { Request, Response } from "express";
+import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 export interface AuthenticatedRequest extends Request {
     decoded: DecodedIdToken;
     user: User;
@@ -14,6 +14,7 @@ export interface OptionalAuthenticatedRequest extends Request {
 export interface ApiScore {
     winner: winner | null;
     duration: scoreType | null;
+    minutes: number | null;
     fullTime: {
         homeTeam: number | null;
         awayTeam: number | null;
@@ -67,13 +68,13 @@ export interface ApiMatchCondensed {
         resultAwayTeamOrDrawOdd: number;
         goalsHomeTeamOdds: number[];
         goalsAwayTeamOdds: number[];
-    }
+    };
     bet?: {
         id: number;
         type: betType;
         amount: number;
         goals: number | null;
-    }
+    };
 }
 
 export interface ApiMatchesParams {

@@ -9,7 +9,7 @@ export async function closeBets(matchId: number) {
         },
         data: {
             opened: false,
-        }
+        },
     });
 }
 
@@ -22,53 +22,77 @@ export async function computeMatchBets(matchId: number) {
             bets: {
                 include: {
                     user: true,
-                }
+                },
+                where: {
+                    computed: false,
+                },
             },
             match: true,
-        }
+        },
     });
 
-    if (!betInfo || betInfo === null || betInfo.match === null)
-        return;
+    if (!betInfo || betInfo === null || betInfo.match === null) return;
 
     let winningBets: betType[] = [];
 
     if (betInfo.match.winner === "HOME_TEAM") {
-        winningBets = ["GOALS_HOME_TEAM", "GOALS_AWAY_TEAM", "RESULT_HOME_TEAM", "RESULT_HOME_TEAM_OR_DRAW"];
+        winningBets = [
+            "GOALS_HOME_TEAM",
+            "GOALS_AWAY_TEAM",
+            "RESULT_HOME_TEAM",
+            "RESULT_HOME_TEAM_OR_DRAW",
+        ];
     } else if (betInfo.match.winner === "AWAY_TEAM") {
-        winningBets = ["GOALS_AWAY_TEAM", "GOALS_HOME_TEAM", "RESULT_AWAY_TEAM", "RESULT_AWAY_TEAM_OR_DRAW"];
+        winningBets = [
+            "GOALS_AWAY_TEAM",
+            "GOALS_HOME_TEAM",
+            "RESULT_AWAY_TEAM",
+            "RESULT_AWAY_TEAM_OR_DRAW",
+        ];
     } else {
-        winningBets = ["GOALS_HOME_TEAM", "GOALS_AWAY_TEAM", "RESULT_DRAW", "RESULT_HOME_TEAM_OR_DRAW", "RESULT_AWAY_TEAM_OR_DRAW"];
+        winningBets = [
+            "GOALS_HOME_TEAM",
+            "GOALS_AWAY_TEAM",
+            "RESULT_DRAW",
+            "RESULT_HOME_TEAM_OR_DRAW",
+            "RESULT_AWAY_TEAM_OR_DRAW",
+        ];
     }
 
     betInfo.bets.forEach(async (bet) => {
         if (winningBets.includes(bet.type)) {
-
             let odd = getWinningOdd(bet, betInfo);
 
             if (odd != 0) {
-                prisma.user.update({
+                await prisma.user.update({
                     where: {
                         id: bet.user.id,
                     },
                     data: {
                         balance: {
                             increment: bet.amount * odd,
-                        }
-                    }
+                        },
+                    },
                 });
 
-                prisma.bet.update({
+                await prisma.bet.update({
                     where: {
                         id: bet.id,
                     },
                     data: {
                         computed: true,
-                    }
+                    },
                 });
 
-                console.log(`New balance evolution for user ${bet.user.id}: ${bet.amount * odd}`);
-                ipc.of['ws'].emit('balance-update', { userId: bet.user.id, balance: bet.amount * odd });
+                console.log(
+                    `New balance evolution for user ${bet.user.id}: ${
+                        bet.amount * odd
+                    }`,
+                );
+                ipc.of["ws"].emit("balance-update", {
+                    userId: bet.user.id,
+                    balance: bet.amount * odd,
+                });
             }
         }
     });
@@ -93,28 +117,35 @@ export async function computeBets() {
         let odd = getWinningOdd(bet, bet.betInfo);
 
         if (odd != 0) {
-            prisma.user.update({
+            await prisma.user.update({
                 where: {
                     id: bet.user.id,
                 },
                 data: {
                     balance: {
                         increment: bet.amount * odd,
-                    }
-                }
+                    },
+                },
             });
 
-            prisma.bet.update({
+            await prisma.bet.update({
                 where: {
                     id: bet.id,
                 },
                 data: {
                     computed: true,
-                }
+                },
             });
 
-            console.log(`New balance evolution for user ${bet.user.id}: ${bet.amount * odd}`);
-            ipc.of['ws'].emit('balance-update', { userId: bet.user.id, balance: bet.amount * odd });
+            console.log(
+                `New balance evolution for user ${bet.user.id}: ${
+                    bet.amount * odd
+                }`,
+            );
+            ipc.of["ws"].emit("balance-update", {
+                userId: bet.user.id,
+                balance: bet.amount * odd,
+            });
         }
     });
 }
@@ -125,22 +156,39 @@ export async function computeBets() {
  * @param betInfo Betinfo of the bet
  * @returns 0 if the bet is not winning, the winning odd otherwise
  */
-function getWinningOdd(bet: Bet & { user: User; }, betInfo: (BetInfo & { match: Match; }) | null) {
+function getWinningOdd(
+    bet: Bet & { user: User },
+    betInfo: (BetInfo & { match: Match }) | null,
+) {
     let odd = 0;
 
-    if (bet.type === "GOALS_HOME_TEAM" && bet.goals && bet.goals <= betInfo?.match.homeTeamScore!) {
+    if (
+        bet.type === "GOALS_HOME_TEAM" &&
+        bet.goals &&
+        bet.goals <= betInfo?.match.homeTeamScore!
+    ) {
         odd = betInfo?.goalsHomeTeamOdds[bet.goals] as number;
     }
 
-    if (bet.type === "GOALS_AWAY_TEAM" && bet.goals && bet.goals <= betInfo?.match.awayTeamScore!) {
+    if (
+        bet.type === "GOALS_AWAY_TEAM" &&
+        bet.goals &&
+        bet.goals <= betInfo?.match.awayTeamScore!
+    ) {
         odd = betInfo?.goalsAwayTeamOdds[bet.goals] as number;
     }
 
-    if (bet.type === "RESULT_HOME_TEAM" && betInfo?.match.winner === "HOME_TEAM") {
+    if (
+        bet.type === "RESULT_HOME_TEAM" &&
+        betInfo?.match.winner === "HOME_TEAM"
+    ) {
         odd = betInfo?.resultHomeTeamOdd;
     }
 
-    if (bet.type === "RESULT_AWAY_TEAM" && betInfo?.match.winner === "AWAY_TEAM") {
+    if (
+        bet.type === "RESULT_AWAY_TEAM" &&
+        betInfo?.match.winner === "AWAY_TEAM"
+    ) {
         odd = betInfo?.resultAwayTeamOdd;
     }
 
@@ -148,11 +196,19 @@ function getWinningOdd(bet: Bet & { user: User; }, betInfo: (BetInfo & { match: 
         odd = betInfo?.resultDrawOdd;
     }
 
-    if (bet.type === "RESULT_HOME_TEAM_OR_DRAW" && (betInfo?.match.winner === "HOME_TEAM" || betInfo?.match.winner === "DRAW")) {
+    if (
+        bet.type === "RESULT_HOME_TEAM_OR_DRAW" &&
+        (betInfo?.match.winner === "HOME_TEAM" ||
+            betInfo?.match.winner === "DRAW")
+    ) {
         odd = betInfo?.resultHomeTeamOrDrawOdd;
     }
 
-    if (bet.type === "RESULT_AWAY_TEAM_OR_DRAW" && (betInfo?.match.winner === "AWAY_TEAM" || betInfo?.match.winner === "DRAW")) {
+    if (
+        bet.type === "RESULT_AWAY_TEAM_OR_DRAW" &&
+        (betInfo?.match.winner === "AWAY_TEAM" ||
+            betInfo?.match.winner === "DRAW")
+    ) {
         odd = betInfo?.resultAwayTeamOrDrawOdd;
     }
     return odd;

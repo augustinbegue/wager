@@ -1,25 +1,34 @@
-import express from 'express';
-import { matchesController, swGetMatches } from '../controllers/matches/matchesController';
-import { swGetMatchesWeek, weekController } from '../controllers/matches/weekController';
-import { checkAuthentication } from '../middlewares/auth';
+import express from "express";
+import { matchController } from "../controllers/matches/matchController";
+import {
+    matchesController,
+    swGetMatches,
+} from "../controllers/matches/matchesController";
+import {
+    swGetMatchesWeek,
+    weekController,
+} from "../controllers/matches/weekController";
+import { checkAuthentication } from "../middlewares/auth";
 
 const router = express.Router();
 
-router.get('/week', checkAuthentication, weekController);
+router.get("/week", checkAuthentication, weekController);
 
-router.get('/', checkAuthentication, matchesController);
+router.get("/:id", checkAuthentication, matchController);
+
+router.get("/", checkAuthentication, matchesController);
 
 export const matchesRouter = router;
 
 export const swMatchesRouter = {
     "/matches": {
-        "get": {
+        get: {
             ...swGetMatches,
         },
     },
     "/matches/week": {
-        "get": {
-            ...swGetMatchesWeek
+        get: {
+            ...swGetMatchesWeek,
         },
     },
 };

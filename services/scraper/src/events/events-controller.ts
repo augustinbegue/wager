@@ -1,25 +1,26 @@
-import { Match } from '@prisma/client';
+import { Match } from "@prisma/client";
 import { ScraperConfig } from "../../../types/configs";
 import { scrapeData, scrapeLiveData } from "../controllers/scrapers";
-import { computeStandings } from '../controllers/standings';
-import { EventEmitter } from 'events';
-import { prisma } from '../../../prisma';
-import { parseScrapedMatches } from '../controllers/parsers';
-import { upsertMatch } from '../controllers/db';
-import { ScrapedMatch } from '../../../types/scraper';
-import { computeBets } from '../controllers/bets';
+import { computeStandings } from "../controllers/standings";
+import { EventEmitter } from "events";
+import { prisma } from "../../../prisma";
+import { parseScrapedMatches } from "../controllers/parsers";
+import { upsertMatch } from "../controllers/db";
+import { ScrapedMatch } from "../../../types/scraper";
+import { computeBets, computeMatchBets } from "../controllers/bets";
 
 interface DataEvents {
-    'match-start': (matchId: number) => void;
-    'match-end': (matchId: number) => void;
-    'match-update': (matchId: number, type: 'home-team-score' | 'away-team-score', value: number) => void;
+    "match-start": (matchId: number) => void;
+    "match-end": (matchId: number) => void;
+    "match-update": (
+        matchId: number,
+        type: "home-team-score" | "away-team-score",
+        value: number,
+    ) => void;
 }
 
 declare interface DataEventEmitter {
-    on<U extends keyof DataEvents>(
-        event: U,
-        listener: DataEvents[U]
-    ): this;
+    on<U extends keyof DataEvents>(event: U, listener: DataEvents[U]): this;
 
     emit<U extends keyof DataEvents>(
         event: U,
@@ -38,8 +39,8 @@ export class EventsController {
     config: ScraperConfig;
 
     liveCompetitions: number[];
-    liveMatches: { matchId: number, code: string }[];
-    startedMatches: { matchId: number, code: string }[];
+    liveMatches: { matchId: number; code: string }[];
+    startedMatches: { matchId: number; code: string }[];
 
     constructor(config: ScraperConfig) {
         this.emitter = new EventEmitter();
@@ -58,18 +59,28 @@ export class EventsController {
 
         // Get all matches in the next 12 hours
         let now = new Date().getTime();
-        let cutoff = now + (1000 * 60 * 60 * 12);
+        let cutoff = now + 1000 * 60 * 60 * 12;
 
         let next12HMatches = matches.filter((match) => {
             let date = match.date.getTime();
 
-            return match.status === 'SCHEDULED' && date < cutoff || match.status === 'IN_PLAY' || match.status === 'PAUSED';
+            return (
+                (match.status === "SCHEDULED" && date < cutoff) ||
+                match.status === "IN_PLAY" ||
+                match.status === "PAUSED"
+            );
         });
 
         // Start timers for each match in the next 12 hours
-        console.log("Found " + next12HMatches.length + " matches in the next 12 hours:");
-        next12HMatches.forEach(match => {
-            console.log(`${match.homeTeamId} vs ${match.awayTeamId} - ${match.date.toLocaleString()}`);
+        console.log(
+            "Found " + next12HMatches.length + " matches in the next 12 hours:",
+        );
+        next12HMatches.forEach((match) => {
+            console.log(
+                `${match.homeTeamId} vs ${
+                    match.awayTeamId
+                } - ${match.date.toLocaleString()}`,
+            );
             setTimeout(() => {
                 this.matchStart(match);
             }, match.date.getTime() - now);
@@ -88,17 +99,21 @@ export class EventsController {
     }
 
     async matchStart(match: Match) {
-        let competition = await prisma.competition.findUnique({ where: { id: match.competitionId } });
+        let competition = await prisma.competition.findUnique({
+            where: { id: match.competitionId },
+        });
         if (!competition) {
-            throw new Error('Competition with id ' + match.competitionId + ' not found');
+            throw new Error(
+                "Competition with id " + match.competitionId + " not found",
+            );
         }
 
         // Emit match-start event
-        this.emitter.emit('match-start', match.id);
+        this.emitter.emit("match-start", match.id);
 
         this.liveMatches.push({
             matchId: match.id,
-            code: competition.code
+            code: competition.code,
         });
 
         let prevLen = this.liveCompetitions.length;
@@ -112,35 +127,56 @@ export class EventsController {
         }
     }
 
-    async matchEnd(obj: { matchId: number, code: string }, scrapedMatch: ScrapedMatch) {
-        console.log('Match ended: ' + obj.matchId);
+    async matchEnd(
+        obj: { matchId: number; code: string },
+        scrapedMatch: ScrapedMatch,
+    ) {
+        console.log("Match ended: " + obj.matchId);
 
         // Retreive the required data
-        let competition = await prisma.competition.findUnique({ where: { code: obj.code }, include: { currentSeason: true, teams: true } });
+        let competition = await prisma.competition.findUnique({
+            where: { code: obj.code },
+            include: { currentSeason: true, teams: true },
+        });
         if (!competition) {
-            console.error('Competition with code ' + obj.code + ' not found.');
+            console.error("Competition with code " + obj.code + " not found.");
             return;
         }
         let teams = competition.teams;
         if (teams.length === 0) {
-            console.error('No teams found for competition with id ' + competition.id + '.');
+            console.error(
+                "No teams found for competition with id " +
+                    competition.id +
+                    ".",
+            );
             return;
         }
 
         // Update match
-        let match = parseScrapedMatches([scrapedMatch], competition, teams, 'FINISHED')[0];
+        let match = parseScrapedMatches(
+            [scrapedMatch],
+            competition,
+            teams,
+            "FINISHED",
+        )[0];
         match = await upsertMatch(match, competition.currentSeason.id);
 
         // Emit match-end event
-        this.emitter.emit('match-end', match.id);
+        this.emitter.emit("match-end", match.id);
 
         // Remove from live matches
         this.liveMatches.splice(this.liveMatches.indexOf(obj), 1);
         this.startedMatches.splice(this.liveMatches.indexOf(obj), 1);
 
         // Stop live data scraper if this is the last competition
-        if (this.liveMatches.filter(o => o.code === obj.code).length === 0) {
-            this.liveCompetitions.splice(this.liveCompetitions.indexOf(competition.id), 1);
+        if (this.liveMatches.filter((o) => o.code === obj.code).length === 0) {
+            this.liveCompetitions.splice(
+                this.liveCompetitions.indexOf(competition.id),
+                1,
+            );
         }
+
+        // Compute match bets
+        computeMatchBets(obj.matchId);
     }
 }

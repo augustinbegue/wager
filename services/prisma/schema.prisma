@@ -37,7 +37,7 @@ model Competition {
   emblemUrl       String
   code            String      @unique
   teamIds         Int[]
-  teams           Team[]      @relation(fields: [teamIds], references: [id])
+  teams           Team[]
   currentSeasonId Int         @unique
   currentSeason   Season      @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
   pastSeasons     Season[]    @relation("competition_pastSeasons")

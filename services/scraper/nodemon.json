@@ -8,11 +8,10 @@
     ],
     "watch": [
         "src/",
-        ".env",
-        "../db"
+        ".env"
     ],
     "execMap": {
-        "ts": "node -r ts-node/register"
+        "ts": "node -r ts-node/register -r tsconfig-paths/register"
     },
     "env": {
         "NODE_ENV": "development"

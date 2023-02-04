@@ -12,8 +12,11 @@ export function parseScrapedMatches(
     teams: Team[],
     status: status = "FINISHED",
 ): Match[] {
-    try {
-        return scrapedMatches.map((scrapedMatch) => {
+    const matches: Match[] = [];
+
+    for (let i = 0; i < scrapedMatches.length; i++) {
+        const scrapedMatch = scrapedMatches[i];
+        try {
             let fullTime = {
                 homeTeam: scrapedMatch.homeScoreFullStr
                     ? parseInt(scrapedMatch.homeScoreFullStr)
@@ -74,16 +77,13 @@ export function parseScrapedMatches(
             );
 
             if (!homeTeam || !awayTeam) {
-                console.log("Teams: " + JSON.stringify(teams));
-                console.log("Scraped Match: " + JSON.stringify(scrapedMatch));
-
                 throw new Error(
                     "team not found: " + scrapedMatch.homeTeamName ||
                         scrapedMatch.awayTeamName,
                 );
             }
 
-            return {
+            matches.push({
                 id: 0,
                 date: date,
                 homeTeamId: homeTeam.id,
@@ -101,12 +101,19 @@ export function parseScrapedMatches(
                     ? parseInt(scrapedMatch.elapsedMinutes)
                     : null,
                 competitionId: competition.id,
-                competition: competition,
-            };
-        });
-    } catch (error) {
-        throw error;
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                console.log(error.message);
+                console.log("Scraped Match: " + JSON.stringify(scrapedMatch));
+                continue;
+            } else {
+                throw error;
+            }
+        }
     }
+
+    return matches;
 }
 
 export function parseScrapedTeams(scrapedTeams: ScrapedTeam[]): Team[] {

@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "messenger": "^0.0.9",
+    "node-ipc": "^11.1.0",
     "ws": "^8.5.0"
   },
   "devDependencies": {

@@ -49,7 +49,6 @@ model Competition {
   name            String          @unique
   emblemUrl       String
   code            String          @unique
-  teamIds         Int[]
   teams           Team[]
   currentSeasonId Int             @unique
   currentSeason   Season          @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
@@ -57,6 +56,7 @@ model Competition {
   matches         Match[]
   standings       Standings[]
   type            competitionType @default(LEAGUE)
+  cupStages       CupStage[]
 
   @@map("competitions")
 }
@@ -93,6 +93,8 @@ model Match {
   competitionId Int
   competition   Competition @relation(fields: [competitionId], references: [id])
   betInfo       BetInfo?
+  cupRound      CupRound?   @relation("cupRound_matches", fields: [cupRoundId], references: [id])
+  cupRoundId    String?
 
   @@map("matches")
 }
@@ -106,6 +108,7 @@ model Team {
   competitions      Competition[]
   wonSeasons        Season[]
   standingEntries   Standings[]
+  CupRounds         CupRound[]    @relation("cupRound_teams")
 
   @@map("teams")
 }
@@ -128,6 +131,31 @@ model Standings {
   season        Season      @relation(fields: [seasonId], references: [id])
 
   @@map("standings")
+}
+
+model CupStage {
+  id            String      @id @default(uuid())
+  rounds        CupRound[]  @relation("cupRound_cupStage")
+  next          CupStage?   @relation("cupStage_next", fields: [nextId], references: [id])
+  nextId        String?
+  previous      CupStage[]  @relation("cupStage_next")
+  competitionId Int
+  competition   Competition @relation(fields: [competitionId], references: [id])
+
+  @@map("cupStages")
+}
+
+model CupRound {
+  id       String     @id @default(uuid())
+  previous CupRound[] @relation("cupRound_next")
+  next     CupRound   @relation("cupRound_next", fields: [nextId], references: [id])
+  nextId   String
+  teams    Team[]     @relation("cupRound_teams")
+  matches  Match[]    @relation("cupRound_matches")
+  stage    CupStage   @relation("cupRound_cupStage", fields: [stageId], references: [id])
+  stageId  String
+
+  @@map("cupRounds")
 }
 
 // entries containing the status of the bets for each match

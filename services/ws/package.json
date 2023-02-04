@@ -1,7 +1,7 @@
 {
   "name": "wager-ws",
   "scripts": {
-    "build": "tsc --build && cp ./src/config.json ./dist/config.json && cp .env ./dist/.env",
+    "build": "tsc --build",
     "dev": "nodemon --config nodemon.json src/index.ts",
     "dev:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts",
     "start": "cd dist && pm2 start index.js --name wager-scraper"

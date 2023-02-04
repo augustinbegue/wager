@@ -1,5 +1,8 @@
 import express from "express";
-import { matchController } from "../controllers/matches/matchController";
+import {
+    matchController,
+    swGetMatch,
+} from "../controllers/matches/matchController";
 import {
     matchesController,
     swGetMatches,
@@ -29,6 +32,11 @@ export const swMatchesRouter = {
     "/matches/week": {
         get: {
             ...swGetMatchesWeek,
+        },
+    },
+    "/matches/{id}": {
+        get: {
+            ...swGetMatch,
         },
     },
 };

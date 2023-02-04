@@ -3,6 +3,26 @@ import { prisma } from "../../../../prisma";
 import { OptionalAuthenticatedRequest } from "../../../../types/api";
 import { parseMatch } from "../../services/parsers/matches";
 
+export const swGetMatch = {
+    summary: "Get a match",
+    tags: ["matches"],
+    responses: {
+        "200": {
+            description: "Match",
+        },
+    },
+    parameters: [
+        {
+            id: {
+                name: "id",
+                in: "path",
+                description: "Match ID",
+                required: true,
+            },
+        },
+    ],
+};
+
 export async function matchController(req: Request, res: Response) {
     try {
         let matchId = parseInt(req.params.id);

@@ -6,7 +6,7 @@
     "ws"
   ],
   "scripts": {
-    "build": "npm run build -ws"
+    "build": "npm run build --workspaces"
   },
   "dependencies": {
     "@prisma/client": "^3.9.1",
@@ -14,7 +14,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "firebase-admin": "^10.0.2",
-    "node-ipc": "^10.1.0"
+    "node-ipc": "^10.1.0",
+    "puppeteer": "^19.6.3"
   },
   "devDependencies": {
     "prisma": "^3.10.0-dev.18"

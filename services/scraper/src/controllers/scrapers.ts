@@ -3,7 +3,7 @@ import { ScrapedMatch, ScrapedTeam } from "../../../types/scraper";
 import { closeBanners, downloadImage, loadFullTable } from "./utils";
 import { parseScrapedMatches, parseScrapedTeams } from "./parsers";
 
-import puppeteer from "puppeteer";
+import puppeteer, { Browser, Page } from "puppeteer";
 import { prisma } from "../../../prisma";
 import { Competition, Match, Season, Team } from "@prisma/client";
 import {
@@ -206,7 +206,7 @@ export async function scrapeLiveData(eventsController: EventsController) {
 }
 
 export async function scrapePath(
-    browser: puppeteer.Browser,
+    browser: Browser,
     config: ScraperConfig,
     baseUrl: string,
     path: string,
@@ -464,7 +464,7 @@ export async function scrapePath(
 
 export async function scrapeFixtures(
     config: ScraperConfig,
-    page: puppeteer.Page,
+    page: Page,
     baseUrl: string,
     path: string,
 ) {
@@ -523,11 +523,7 @@ export async function scrapeFixtures(
     return scrapedMatches;
 }
 
-export async function scrapeLive(
-    page: puppeteer.Page,
-    baseUrl: string,
-    path: string,
-) {
+export async function scrapeLive(page: Page, baseUrl: string, path: string) {
     await page.goto(baseUrl + path, { waitUntil: "networkidle2" });
 
     let scrapedMatches = await page.evaluate(() => {
@@ -588,7 +584,7 @@ export async function scrapeLive(
 
 export async function scrapeResults(
     config: ScraperConfig,
-    page: puppeteer.Page,
+    page: Page,
     baseUrl: string,
     path: string,
 ) {
@@ -675,7 +671,7 @@ export async function scrapeResults(
 
 export async function scrapeMatch(
     match: Match & { homeTeam: Team; awayTeam: Team },
-    page: puppeteer.Page,
+    page: Page,
     baseUrl: string,
     path: string,
 ) {
@@ -762,7 +758,7 @@ export async function scrapeMatch(
 
 export async function scrapeTeams(
     config: ScraperConfig,
-    page: puppeteer.Page,
+    page: Page,
     baseUrl: string,
     path: string,
 ) {
@@ -772,14 +768,13 @@ export async function scrapeTeams(
 
     await closeBanners(page);
 
-    let scrapedTeams: ScrapedTeam[] = await page.evaluate(() => {
-        let containers = [
-            document.querySelector(
-                "#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body",
-            ) as HTMLDivElement,
-        ];
+    // Preparation for scraping
+    await page.evaluate(() => {
+        let container = document.querySelector(
+            "#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body",
+        ) as HTMLDivElement;
 
-        if (containers.length === 0) {
+        if (!container) {
             // Tournament Based Competition
             let groupStageLink = document.querySelector(
                 "#tournament-table > div.tournamentStages > a:nth-child(3)",
@@ -790,43 +785,46 @@ export async function scrapeTeams(
 
             if (groupStageLink) {
                 groupStageLink.click();
-
-                containers = Array.from(
-                    document.querySelectorAll(".ui-table__body"),
-                ) as HTMLDivElement[];
             }
         }
-
-        // Standings Based Competition
-        let teams = [];
-        for (let ci = 0; ci < containers.length; ci++) {
-            const container = containers[ci];
-            for (let i = 0; i < container.childNodes.length; i++) {
-                const element = container.childNodes[i] as HTMLDivElement;
-
-                let teamEl = element.querySelector(
-                    ".table__cell--participant",
-                ) as HTMLDivElement;
-
-                let teamName = (
-                    teamEl.querySelector(
-                        ".tableCellParticipant__name",
-                    ) as HTMLDivElement
-                ).innerText;
-                let teamCrestUrl = (
-                    (
-                        teamEl.querySelector(
-                            ".tableCellParticipant__image",
-                        ) as HTMLAnchorElement
-                    ).childNodes[0] as HTMLImageElement
-                ).src;
-
-                teams.push({ name: teamName, crestUrl: teamCrestUrl });
-            }
-        }
-
-        return teams;
     });
+
+    let scrapedTeams: { name: string; crestUrl: string }[] =
+        await page.evaluate(() => {
+            let containers = document.querySelectorAll(
+                "div.ui-table__body",
+            ) as NodeListOf<HTMLDivElement>;
+
+            // Standings Based Competition
+            let teams = [];
+            for (let ci = 0; ci < containers.length; ci++) {
+                const container = containers[ci];
+                for (let i = 0; i < container.childNodes.length; i++) {
+                    const element = container.childNodes[i] as HTMLDivElement;
+
+                    let teamEl = element.querySelector(
+                        ".tableCellParticipant",
+                    ) as HTMLDivElement;
+
+                    let teamName = (
+                        teamEl.querySelector(
+                            ".tableCellParticipant__name",
+                        ) as HTMLDivElement
+                    ).innerText;
+                    let teamCrestUrl = (
+                        (
+                            teamEl.querySelector(
+                                ".tableCellParticipant__image",
+                            ) as HTMLAnchorElement
+                        ).childNodes[0] as HTMLImageElement
+                    ).src;
+
+                    teams.push({ name: teamName, crestUrl: teamCrestUrl });
+                }
+            }
+
+            return teams;
+        });
 
     for (let i = 0; i < scrapedTeams.length; i++) {
         const team = scrapedTeams[i];
@@ -847,7 +845,7 @@ export async function scrapeTeams(
 }
 
 export async function scrapeCompetition(
-    page: puppeteer.Page,
+    page: Page,
     baseUrl: string,
     path: string,
 ) {

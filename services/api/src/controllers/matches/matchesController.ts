@@ -1,47 +1,47 @@
-import { prisma } from '../../../../prisma';
-import { Request, Response } from 'express';
-import { parseMatches } from '../../services/parsers/matches';
-import { parseMatchesParams } from '../../services/parsers/parameters';
-import { OptionalAuthenticatedRequest } from '../../../../types/api';
+import { prisma } from "../../../../prisma";
+import { Request, Response } from "express";
+import { parseMatches } from "../../services/parsers/matches";
+import { parseMatchesParams } from "../../services/parsers/parameters";
+import { OptionalAuthenticatedRequest } from "../../../../types/api";
 
 export const swGetMatches = {
-    "summary": "Get all matches",
-    "tags": [
-        "matches",
-    ],
-    "responses": {
+    summary: "Get all matches",
+    tags: ["matches"],
+    responses: {
         "200": {
-            "description": "Matches",
+            description: "Matches",
         },
     },
-    "parameters": [
+    parameters: [
         {
-            "competition": {
-                "name": "competition",
-                "in": "query",
-                "description": "Competition ID",
-                "required": false,
+            competition: {
+                name: "competition",
+                in: "query",
+                description: "Competition ID",
+                required: false,
             },
-        }
-    ]
-}
+        },
+    ],
+};
 
 export async function matchesController(req: Request, res: Response) {
     try {
         let params = parseMatchesParams(req.query);
 
-        let teamFilter = params.team ? {
-            OR: [
-                {
-                    homeTeam: {
-                        id: params.team
-                    },
-                    awayTeam: {
-                        id: params.team
-                    }
-                }
-            ]
-        } : {};
+        let teamFilter = params.team
+            ? {
+                  OR: [
+                      {
+                          homeTeam: {
+                              id: params.team,
+                          },
+                          awayTeam: {
+                              id: params.team,
+                          },
+                      },
+                  ],
+              }
+            : {};
 
         let authReq = req as unknown as OptionalAuthenticatedRequest;
 
@@ -49,17 +49,17 @@ export async function matchesController(req: Request, res: Response) {
             where: {
                 date: {
                     gte: params.startDate,
-                    lte: params.endDate
+                    lte: params.endDate,
                 },
                 ...teamFilter,
                 homeTeamId: params.homeTeam,
                 awayTeamId: params.awayTeam,
                 competitionId: params.competition,
                 status: params.status,
-                matchday: params.matchday
+                matchday: params.matchday,
             },
             orderBy: {
-                date: 'asc',
+                date: "asc",
             },
             skip: params.offset,
             take: params.limit,
@@ -71,12 +71,12 @@ export async function matchesController(req: Request, res: Response) {
                     include: {
                         bets: {
                             where: {
-                                userId: authReq.user?.id
-                            }
-                        }
-                    }
+                                userId: authReq.user?.id,
+                            },
+                        },
+                    },
                 },
-            }
+            },
         });
 
         res.json({
@@ -88,7 +88,7 @@ export async function matchesController(req: Request, res: Response) {
     } catch (error) {
         console.error(error);
         res.status(500).json({
-            message: (error as Error).message
+            message: (error as Error).message,
         });
     }
 }

@@ -1,3 +1,4 @@
 node_modules/
 public/
 wager-*-firebase-adminsdk*.json
+**/dist/**

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { createWriteStream } from "fs";
-import puppeteer from "puppeteer";
+import { Page } from "puppeteer";
 
-export async function closeBanners(page: puppeteer.Page) {
+export async function closeBanners(page: Page) {
     await page.evaluate(() => {
         let cookies = document.querySelector(
             "#onetrust-close-btn-container > button",
@@ -13,7 +13,7 @@ export async function closeBanners(page: puppeteer.Page) {
     });
 }
 
-export async function loadFullTable(page: puppeteer.Page) {
+export async function loadFullTable(page: Page) {
     try {
         let anchor = await page.$(
             "#live-table > div.event.event--results > div > div > a",
@@ -44,7 +44,7 @@ export async function downloadImage(
         let filepath =
             __dirname + "/../../../api/public/images/" + path + filename;
 
-        console.log(`Downloading ${url} -> ${filepath}...`);
+        // console.log(`Downloading ${url} -> ${filepath}...`);
 
         const response = await axios({
             url,
@@ -60,7 +60,7 @@ export async function downloadImage(
         });
 
         let apipath = "static/images/" + path + filename;
-        console.log(`Downloaded ${url} -> ${apipath}`);
+        // console.log(`Downloaded ${url} -> ${apipath}`);
 
         return apipath;
     } catch (error) {

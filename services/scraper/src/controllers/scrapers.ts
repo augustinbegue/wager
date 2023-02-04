@@ -5,7 +5,7 @@ import { parseScrapedMatches, parseScrapedTeams } from "./parsers";
 
 import puppeteer, { Browser, Page } from "puppeteer";
 import { prisma } from "../../../prisma";
-import { Competition, Match, Season, Team } from "@prisma/client";
+import { Match, Team, competitionType } from "@prisma/client";
 import {
     CompetitionIncludesSeason,
     MatchIncludesTeams,
@@ -31,6 +31,10 @@ export async function scrapeData(config: ScraperConfig) {
             height: 1080,
         },
     });
+
+    if (config.debug) {
+        browser;
+    }
 
     let matches: Match[] = [];
     try {
@@ -768,13 +772,27 @@ export async function scrapeTeams(
 
     await closeBanners(page);
 
+    page.on("console", (message) =>
+        console.log(
+            `${message.type().substr(0, 3).toUpperCase()} ${message.text()}`,
+        ),
+    )
+        .on("pageerror", ({ message }) => console.log(message))
+        .on("requestfailed", (request) =>
+            console.log(`${request.failure().errorText} ${request.url()}`),
+        );
+
     // Preparation for scraping
-    await page.evaluate(() => {
+    let competitionType: competitionType = (await page.evaluate(() => {
+        let type = "LEAGUE";
+
         let container = document.querySelector(
             "#tournament-table-tabs-and-content > div:nth-child(3) > div:nth-child(1) > div > div > div.ui-table__body",
         ) as HTMLDivElement;
 
         if (!container) {
+            type = "CUP";
+
             // Tournament Based Competition
             let groupStageLink = document.querySelector(
                 "#tournament-table > div.tournamentStages > a:nth-child(3)",
@@ -784,16 +802,32 @@ export async function scrapeTeams(
             ) as HTMLAnchorElement;
 
             if (groupStageLink) {
-                groupStageLink.click();
+                console.log("Group Stage Link: " + groupStageLink.href);
+
+                groupStageLink.id = "SCRAPED-GROUP-STAGE-LINK";
             }
         }
-    });
+
+        return type;
+    })) as competitionType;
+
+    console.log("Competition Type: " + competitionType);
+
+    if (competitionType === "CUP") {
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: "networkidle2" }),
+            page.click("#SCRAPED-GROUP-STAGE-LINK"),
+            new Promise((resolve) => setTimeout(resolve, 1000)),
+        ]);
+    }
 
     let scrapedTeams: { name: string; crestUrl: string }[] =
         await page.evaluate(() => {
             let containers = document.querySelectorAll(
                 "div.ui-table__body",
             ) as NodeListOf<HTMLDivElement>;
+
+            console.log("Containers: " + containers.length);
 
             // Standings Based Competition
             let teams = [];
@@ -825,6 +859,8 @@ export async function scrapeTeams(
 
             return teams;
         });
+
+    console.log(`Scraped ${scrapedTeams.length} teams.`);
 
     for (let i = 0; i < scrapedTeams.length; i++) {
         const team = scrapedTeams[i];

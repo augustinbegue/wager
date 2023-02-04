@@ -31,18 +31,32 @@ enum winner {
   DRAW
 }
 
+enum competitionType {
+  CUP
+  LEAGUE
+}
+
+enum competitionStage {
+  REGULAR_SEASON
+  PLAY_OFFS
+  GROUP_STAGE
+  ELIMINATION_STAGE
+  FINAL_STAGE
+}
+
 model Competition {
-  id              Int         @id @default(autoincrement())
-  name            String      @unique
+  id              Int             @id @default(autoincrement())
+  name            String          @unique
   emblemUrl       String
-  code            String      @unique
+  code            String          @unique
   teamIds         Int[]
   teams           Team[]
-  currentSeasonId Int         @unique
-  currentSeason   Season      @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
-  pastSeasons     Season[]    @relation("competition_pastSeasons")
+  currentSeasonId Int             @unique
+  currentSeason   Season          @relation("competition_currentSeason", fields: [currentSeasonId], references: [id])
+  pastSeasons     Season[]        @relation("competition_pastSeasons")
   matches         Match[]
   standings       Standings[]
+  type            competitionType @default(LEAGUE)
 
   @@map("competitions")
 }

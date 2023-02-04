@@ -1,0 +1,56 @@
+{
+    "version": "2.0.0",
+    "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true
+    },
+    "tasks": [
+        {
+            "label": "dev",
+            "dependsOn": ["dev api", "dev scraper", "dev ws"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "dev api",
+            "type": "shell",
+            "command": "npm run dev",
+            "group": {
+                "kind": "build"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/api"
+            },
+            "isBackground": true
+        },
+        {
+            "label": "dev scraper",
+            "type": "shell",
+            "command": "npm run dev",
+            "group": {
+                "kind": "build"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/scraper"
+            },
+            "isBackground": true
+        },
+        {
+            "label": "dev ws",
+            "type": "shell",
+            "command": "npm run dev",
+            "group": {
+                "kind": "build"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/ws"
+            },
+            "isBackground": true
+        }
+    ]
+}

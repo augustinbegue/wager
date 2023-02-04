@@ -4,7 +4,7 @@
     "build": "tsc --build",
     "dev": "nodemon --config nodemon.json src/index.ts",
     "dev:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts",
-    "start": "cd dist && pm2 start index.js --name wager-scraper"
+    "start": "cd dist && pm2 start index.js --name wager-ws"
   },
   "dependencies": {
     "messenger": "^0.0.9",

@@ -1,10 +1,5 @@
 {
     "leagues": [
-        "england/premier-league/",
-        "france/ligue-1/",
-        "germany/bundesliga/",
-        "italy/serie-a/",
-        "spain/laliga/",
         "europe/champions-league/"
     ],
     "staticPaths": {

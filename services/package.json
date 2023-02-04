@@ -6,7 +6,9 @@
     "ws"
   ],
   "scripts": {
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "start": "npm run start --workspaces",
+    "dev": "npm run dev --workspaces"
   },
   "dependencies": {
     "@prisma/client": "^3.9.1",

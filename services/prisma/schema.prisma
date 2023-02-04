@@ -72,6 +72,7 @@ model Season {
   pastCompetitionId Int?
   pastCompetition   Competition? @relation("competition_pastSeasons", fields: [pastCompetitionId], references: [id])
   standings         Standings[]
+  cupStages         CupStage[]
 
   @@map("seasons")
 }
@@ -140,7 +141,10 @@ model CupStage {
   nextId        String?
   previous      CupStage[]  @relation("cupStage_next")
   competitionId Int
-  competition   Competition @relation(fields: [competitionId], references: [id])
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  seasonId      Int
+  season        Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  order         Int
 
   @@map("cupStages")
 }
@@ -148,12 +152,13 @@ model CupStage {
 model CupRound {
   id       String     @id @default(uuid())
   previous CupRound[] @relation("cupRound_next")
-  next     CupRound   @relation("cupRound_next", fields: [nextId], references: [id])
-  nextId   String
+  next     CupRound?  @relation("cupRound_next", fields: [nextId], references: [id])
+  nextId   String?
   teams    Team[]     @relation("cupRound_teams")
   matches  Match[]    @relation("cupRound_matches")
-  stage    CupStage   @relation("cupRound_cupStage", fields: [stageId], references: [id])
+  stage    CupStage   @relation("cupRound_cupStage", fields: [stageId], references: [id], onDelete: Cascade)
   stageId  String
+  order    Int
 
   @@map("cupRounds")
 }

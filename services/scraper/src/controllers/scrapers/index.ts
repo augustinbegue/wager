@@ -45,6 +45,7 @@ export async function scrapeData(config: ScraperConfig) {
                 matches = [...matches, ...m];
             }
         } else {
+            // Scrape one competition at a time in Debug Mode
             for (let i = 0; i < config.leagues.length; i++) {
                 const path = config.leagues[i];
 

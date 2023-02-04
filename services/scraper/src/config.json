@@ -1,5 +1,10 @@
 {
     "leagues": [
+        "england/premier-league/",
+        "italy/serie-a/",
+        "spain/laliga/",
+        "france/ligue-1/",
+        "germany/bundesliga/",
         "europe/champions-league/"
     ],
     "staticPaths": {
@@ -11,5 +16,5 @@
     "updateFixtures": true,
     "updateResults": true,
     "updateCompetitions": true,
-    "debug": true
+    "debug": false
 }

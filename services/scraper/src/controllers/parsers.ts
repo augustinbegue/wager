@@ -1,7 +1,17 @@
 import moment from "moment";
-import { ScrapedMatch, ScrapedTeam } from "../../../types/scraper";
-import { CompetitionIncludesSeason } from "../../../types/db";
-import { Team, status, scoreType, Match, winner } from "@prisma/client";
+import { ScrapedMatch, ScrapedStage, ScrapedTeam } from "$types/scraper";
+import { CompetitionIncludesSeason } from "$types/db";
+import {
+    Team,
+    status,
+    scoreType,
+    Match,
+    winner,
+    CupStage,
+    Competition,
+    CupRound,
+} from "@prisma/client";
+import { prisma } from "$prisma";
 
 const scoreStatuses: status[] = ["LIVE", "IN_PLAY", "FINISHED", "PAUSED"];
 const matchDayStatuses: status[] = ["FINISHED", "SCHEDULED"];
@@ -101,6 +111,7 @@ export function parseScrapedMatches(
                     ? parseInt(scrapedMatch.elapsedMinutes)
                     : null,
                 competitionId: competition.id,
+                cupRoundId: null,
             });
         } catch (error) {
             if (error instanceof Error) {
@@ -125,4 +136,121 @@ export function parseScrapedTeams(scrapedTeams: ScrapedTeam[]): Team[] {
             crestUrl: scrapedTeam.crestUrl,
         };
     });
+}
+
+export async function parseScrapedStages(
+    competition: CompetitionIncludesSeason,
+    scrapedStages: ScrapedStage[],
+) {
+    if (!scrapedStages || scrapedStages.length === 0) {
+        console.log(`No stages found for competition ${competition.code}`);
+        return;
+    }
+
+    // Check if all stages have the correct number of rounds, and add them if not
+    let currRoundCount = scrapedStages[0].length / 2;
+    let r = 1;
+    while (currRoundCount >= 1) {
+        if (!scrapedStages[r]) {
+            scrapedStages.push([]);
+        }
+
+        if (scrapedStages[r].length !== currRoundCount) {
+            console.log(
+                `Stage ${r} has ${
+                    scrapedStages[r].length
+                } rounds, but should have ${currRoundCount} rounds. Adding ${
+                    currRoundCount - scrapedStages[r].length
+                } missing rounds...`,
+            );
+
+            let addCount = currRoundCount - scrapedStages[r].length;
+
+            for (let i = 0; i < addCount; i++) {
+                scrapedStages[r].push({
+                    team1Name: "TBD",
+                    team2Name: "TBD",
+                });
+            }
+        }
+
+        currRoundCount /= 2;
+        r++;
+    }
+
+    // Reverse order of stages from first to last: we need to know the next stage before inserting
+    scrapedStages.reverse();
+
+    let nextStage:
+        | (CupStage & {
+              rounds: CupRound[];
+          })
+        | null = null;
+
+    let nextRoundIndex = 0;
+    let nextRoundUsage = 0;
+
+    for (let i = 0; i < scrapedStages.length; i++) {
+        const scrapedStage = scrapedStages[i];
+
+        let stage: CupStage & {
+            rounds: CupRound[];
+        } = await prisma.cupStage.create({
+            data: {
+                competitionId: competition.id,
+                seasonId: competition.currentSeason.id,
+                nextId: nextStage?.id,
+                order: i,
+            },
+            include: {
+                rounds: true,
+            },
+        });
+
+        for (let j = 0; j < scrapedStage.length; j++) {
+            const scrapedRound = scrapedStage[j];
+
+            if (nextRoundUsage === 2) {
+                nextRoundIndex++;
+                nextRoundUsage = 0;
+            }
+
+            let connect = [];
+
+            if (scrapedRound.team1Name !== "TBD") {
+                connect.push({
+                    name: scrapedRound.team1Name,
+                });
+            }
+            if (scrapedRound.team2Name !== "TBD") {
+                connect.push({
+                    name: scrapedRound.team2Name,
+                });
+            }
+
+            let round = await prisma.cupRound.create({
+                data: {
+                    stageId: stage.id,
+                    nextId: nextStage?.rounds[nextRoundIndex]?.id,
+                    ...(connect.length > 0
+                        ? {
+                              teams: {
+                                  connect,
+                              },
+                          }
+                        : {}),
+                    order: j,
+                },
+            });
+
+            nextRoundUsage++;
+
+            stage.rounds.push(round);
+        }
+
+        nextRoundIndex = 0;
+        nextRoundUsage = 0;
+
+        nextStage = stage;
+    }
 }

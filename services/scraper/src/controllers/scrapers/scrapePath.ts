@@ -1,5 +1,9 @@
 import { ScraperConfig } from "$types/configs";
-import { parseScrapedMatches, parseScrapedTeams } from "../parsers";
+import {
+    parseScrapedMatches,
+    parseScrapedStages,
+    parseScrapedTeams,
+} from "../parsers";
 import { Browser } from "puppeteer";
 import { prisma } from "$prisma";
 import { Match, Team } from "@prisma/client";
@@ -10,6 +14,7 @@ import { scrapeTeams } from "./scrapeTeams";
 import { scrapeResults } from "./scrapeResults";
 import { scrapeLive } from "./scrapeLive";
 import { scrapeFixtures } from "./scrapeFixtures";
+import { scrapeCup } from "./scrapeCup";
 
 export async function scrapePath(
     browser: Browser,
@@ -168,7 +173,6 @@ export async function scrapePath(
         );
         teams = parseScrapedTeams(scrapedTeams);
 
-        competition.teamIds = [];
         for (let i = 0; i < teams.length; i++) {
             teams[i] = await prisma.team.upsert({
                 where: {
@@ -270,6 +274,22 @@ export async function scrapePath(
                 "SCHEDULED",
             ),
         ];
+    }
+
+    // If competition is a cup, we need to parse & build the cup tree
+    if (competition.type === "CUP" && config.updateCompetitions) {
+        let scrapedStages = await scrapeCup(config, page, baseUrl, path);
+
+        await prisma.cupStage.deleteMany({
+            where: {
+                AND: [
+                    { competitionId: competition.id },
+                    { seasonId: competition.currentSeason.id },
+                ],
+            },
+        });
+
+        await parseScrapedStages(competition, scrapedStages);
     }
 
     for (let i = 0; i < matches.length; i++) {

@@ -14,3 +14,10 @@ export interface ScrapedTeam {
     name: string;
     crestUrl: string;
 }
+
+export interface ScrapedRound {
+    team1Name: string;
+    team2Name: string;
+}
+
+export type ScrapedStage = ScrapedRound[];

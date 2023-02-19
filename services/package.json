@@ -1,5 +1,6 @@
 {
   "name": "wager-services",
+  "version": "0.1.1",
   "workspaces": [
     "api",
     "scraper",
@@ -8,11 +9,15 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "start": "npm run start --workspaces",
-    "dev": "npm run dev --workspaces"
+    "dev": "npm run dev --workspaces",
+    "docker:build": "docker build -t docker.hostag.fr/wager-services-builder:%npm_package_version% . && docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:publish": "docker push docker.hostag.fr/wager-services-builder:%npm_package_version% && docker compose push"
   },
   "dependencies": {
     "@prisma/client": "^4.9.0",
     "prisma": "^4.9.0",
+    "redis": "^4.6.4",
     "typescript": "^4.9.5"
   },
   "devDependencies": {

@@ -1,13 +1,13 @@
+import { publisher } from "api/src";
 import { Request, Response } from "express";
 import { prisma } from "../../../../prisma";
 import { AuthenticatedRequest, BetsNewBody } from "../../../../types/api";
 import { computeNewOdds } from "../../services/bets/userBets";
-import ipc from "node-ipc";
 
 export async function newBetController(req: Request, res: Response) {
     let matchId = parseInt(req.params.matchId);
 
-    let authReq = (req as unknown as AuthenticatedRequest);
+    let authReq = req as unknown as AuthenticatedRequest;
 
     let params = req.body as BetsNewBody;
 
@@ -15,7 +15,11 @@ export async function newBetController(req: Request, res: Response) {
         return res.status(400).send({ message: "Missing bet type." });
     }
 
-    if ((params.type === "GOALS_AWAY_TEAM" || params.type === "GOALS_HOME_TEAM") && !params.goals) {
+    if (
+        (params.type === "GOALS_AWAY_TEAM" ||
+            params.type === "GOALS_HOME_TEAM") &&
+        !params.goals
+    ) {
         return res.status(400).send({ message: "Missing goals." });
     }
 
@@ -31,7 +35,6 @@ export async function newBetController(req: Request, res: Response) {
         });
     }
 
-
     let betInfo = await prisma.betInfo.findUnique({
         where: {
             matchId: matchId,
@@ -40,9 +43,9 @@ export async function newBetController(req: Request, res: Response) {
             bets: {
                 where: {
                     userId: authReq.user.id,
-                }
-            }
-        }
+                },
+            },
+        },
     });
 
     if (betInfo) {
@@ -60,31 +63,48 @@ export async function newBetController(req: Request, res: Response) {
                     type: params.type,
                     amount: params.amount,
                     goals: params.goals,
-                }
+                },
             });
 
             // Update bet amounts and odds
             betInfo = {
                 ...betInfo,
-                ... await prisma.betInfo.update(
-                    {
-                        where: {
-                            id: betInfo.id,
+                ...(await prisma.betInfo.update({
+                    where: {
+                        id: betInfo.id,
+                    },
+                    data: {
+                        homeTeamAmount: {
+                            increment:
+                                params.type === "GOALS_HOME_TEAM" ||
+                                params.type === "RESULT_HOME_TEAM"
+                                    ? params.amount
+                                    : params.type === "RESULT_HOME_TEAM_OR_DRAW"
+                                    ? params.amount / 2
+                                    : 0,
                         },
-                        data: {
-                            homeTeamAmount: {
-                                increment: params.type === "GOALS_HOME_TEAM" || params.type === "RESULT_HOME_TEAM" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" ? params.amount / 2 : 0,
-                            },
-                            awayTeamAmount: {
-                                increment: params.type === "GOALS_AWAY_TEAM" || params.type === "RESULT_AWAY_TEAM" ? params.amount : params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
-                            },
-                            drawAmount: {
-                                increment: params.type === "RESULT_DRAW" ? params.amount : params.type === "RESULT_HOME_TEAM_OR_DRAW" || params.type === "RESULT_AWAY_TEAM_OR_DRAW" ? params.amount / 2 : 0,
-                            },
-                        }
-                    }
-                )
-            }
+                        awayTeamAmount: {
+                            increment:
+                                params.type === "GOALS_AWAY_TEAM" ||
+                                params.type === "RESULT_AWAY_TEAM"
+                                    ? params.amount
+                                    : params.type === "RESULT_AWAY_TEAM_OR_DRAW"
+                                    ? params.amount / 2
+                                    : 0,
+                        },
+                        drawAmount: {
+                            increment:
+                                params.type === "RESULT_DRAW"
+                                    ? params.amount
+                                    : params.type ===
+                                          "RESULT_HOME_TEAM_OR_DRAW" ||
+                                      params.type === "RESULT_AWAY_TEAM_OR_DRAW"
+                                    ? params.amount / 2
+                                    : 0,
+                        },
+                    },
+                })),
+            };
 
             // Update user balance
             await prisma.user.update({
@@ -94,11 +114,17 @@ export async function newBetController(req: Request, res: Response) {
                 data: {
                     balance: {
                         decrement: params.amount,
-                    }
-                }
-            })
+                    },
+                },
+            });
 
-            ipc.of['ws'].emit('balance-update', { userId: authReq.user.id, balance: -1 * bet.amount });
+            publisher.publish(
+                "balance-update",
+                JSON.stringify({
+                    userId: authReq.user.id,
+                    balance: -1 * bet.amount,
+                }),
+            );
 
             // Update odds
             computeNewOdds(betInfo);

@@ -42,7 +42,9 @@ export async function downloadImage(
 ) {
     try {
         let filepath =
-            __dirname + "/../../../api/public/images/" + path + filename;
+            process.env.PRODUCTION === "true"
+                ? "/public/images/" + path + filename
+                : __dirname + "/../../../api/public/images/" + path + filename;
 
         // console.log(`Downloading ${url} -> ${filepath}...`);
 

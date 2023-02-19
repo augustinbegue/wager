@@ -11,7 +11,7 @@
         ".env"
     ],
     "execMap": {
-        "ts": "node -r ts-node/register -r tsconfig-paths/register"
+        "ts": "node -r dotenv/config -r ts-node/register -r tsconfig-paths/register"
     },
     "env": {
         "NODE_ENV": "development"

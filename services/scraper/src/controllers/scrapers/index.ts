@@ -9,6 +9,7 @@ import { EventsController } from "../../events/events-controller";
 import { scrapeMatch } from "./scrapeMatch";
 import { scrapeLive } from "./scrapeLive";
 import { scrapePath } from "./scrapePath";
+import { kill } from "process";
 
 export async function scrapeData(config: ScraperConfig) {
     const baseUrl = process.env.SCRAPING_URL;
@@ -22,6 +23,7 @@ export async function scrapeData(config: ScraperConfig) {
     const browser = await puppeteer.launch({
         headless: !config.debug,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        executablePath: process.env.CHROME_BIN,
         defaultViewport: {
             width: 1920,
             height: 1080,
@@ -86,6 +88,7 @@ export async function scrapeLiveData(eventsController: EventsController) {
     const baseUrl = process.env.SCRAPING_URL as string;
     const browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.CHROME_BIN,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
         timeout: 0,
     });
@@ -152,33 +155,39 @@ export async function scrapeLiveData(eventsController: EventsController) {
         }
     }
 
-    // Check for finished matches
-    for (let i = 0; i < eventsController.startedMatches.length; i++) {
-        const obj = eventsController.startedMatches[i];
+    try {
+        // Check for finished matches
+        for (let i = 0; i < eventsController.startedMatches.length; i++) {
+            const obj = eventsController.startedMatches[i];
 
-        // If the match is not in the list of live matches, it is finished
-        if (!matches.find((match) => match.id === obj.matchId)) {
-            let matchIncludesTeams = await prisma.match.findUnique({
-                where: { id: obj.matchId },
-                include: { homeTeam: true, awayTeam: true },
-            });
+            // If the match is not in the list of live matches, it is finished
+            if (!matches.find((match) => match.id === obj.matchId)) {
+                let matchIncludesTeams = await prisma.match.findUnique({
+                    where: { id: obj.matchId },
+                    include: { homeTeam: true, awayTeam: true },
+                });
 
-            if (matchIncludesTeams && matchIncludesTeams != null) {
-                let scrapedMatch = await scrapeMatch(
-                    matchIncludesTeams,
-                    page,
-                    baseUrl,
-                    obj.code,
-                );
+                if (matchIncludesTeams && matchIncludesTeams != null) {
+                    let scrapedMatch = await scrapeMatch(
+                        matchIncludesTeams,
+                        page,
+                        baseUrl,
+                        obj.code,
+                    );
 
-                if (scrapedMatch) {
-                    eventsController.matchEnd(obj, scrapedMatch);
+                    if (scrapedMatch) {
+                        eventsController.matchEnd(obj, scrapedMatch);
+                    }
                 }
             }
         }
+    } catch (error) {
+        console.error("Error checking for finished matches:", error);
     }
 
     try {
+        let pid = browser.process()?.pid;
+
         console.log(
             `Closing browser instance: ${
                 browser.process()?.pid
@@ -189,6 +198,10 @@ export async function scrapeLiveData(eventsController: EventsController) {
         const pages = await browser.pages();
         await Promise.all(pages.map((page) => page.close()));
         await browser.close();
+
+        try {
+            if (pid) kill(pid);
+        } catch (error) {}
 
         console.log("Browser closed");
     } catch (error) {

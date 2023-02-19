@@ -1,0 +1,24 @@
+version: '3.9'
+services:
+  api:
+    build: 
+      context: ./api
+      tags: 
+        - docker.hostag.fr/wager-api:${npm_package_version}
+    ports:
+      - 3000:3000
+    image: docker.hostag.fr/wager-api:${npm_package_version}
+  scraper:
+    build:
+      context: ./scraper
+      tags:
+        - docker.hostag.fr/wager-scraper:${npm_package_version}
+    image: docker.hostag.fr/wager-scraper:${npm_package_version}
+  ws:
+    build:
+      context: ./ws
+      tags:
+        - docker.hostag.fr/wager-ws:${npm_package_version}
+    image: docker.hostag.fr/wager-ws:${npm_package_version}
+    ports:
+      - 4000:4000

@@ -7,11 +7,10 @@
         "coverage/"
     ],
     "watch": [
-        "src/",
-        ".env"
+        "src/"
     ],
     "execMap": {
-        "ts": "node -r tsconfig-paths/register -r ts-node/register"
+        "ts": "node -r dotenv/config -r tsconfig-paths/register -r ts-node/register"
     },
     "env": {
         "NODE_ENV": "development"

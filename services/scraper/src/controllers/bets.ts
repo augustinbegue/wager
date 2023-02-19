@@ -1,5 +1,5 @@
 import { Bet, BetInfo, betType, Match, User } from "@prisma/client";
-import ipc from "node-ipc";
+import { publisher } from "..";
 import { prisma } from "../../../prisma";
 
 export async function closeBets(matchId: number) {
@@ -89,10 +89,14 @@ export async function computeMatchBets(matchId: number) {
                         bet.amount * odd
                     }`,
                 );
-                ipc.of["ws"].emit("balance-update", {
-                    userId: bet.user.id,
-                    balance: bet.amount * odd,
-                });
+
+                await publisher.publish(
+                    "balance-update",
+                    JSON.stringify({
+                        userId: bet.user.id,
+                        balance: bet.amount * odd,
+                    }),
+                );
             }
         }
     });
@@ -142,10 +146,13 @@ export async function computeBets() {
                     bet.amount * odd
                 }`,
             );
-            ipc.of["ws"].emit("balance-update", {
-                userId: bet.user.id,
-                balance: bet.amount * odd,
-            });
+            await publisher.publish(
+                "balance-update",
+                JSON.stringify({
+                    userId: bet.user.id,
+                    balance: bet.amount * odd,
+                }),
+            );
         }
     });
 }

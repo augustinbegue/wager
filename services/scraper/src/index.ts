@@ -1,12 +1,7 @@
-import dotenv from "dotenv";
-
-// Load dotenv before importing anything else
-dotenv.config();
-
-import ipc from "node-ipc";
 import { EventsController } from "./events/events-controller";
 import { readFileSync } from "fs";
 import { ScraperConfig } from "../../types/configs";
+import { createClient } from "redis";
 
 let config = JSON.parse(
     readFileSync(__dirname + "/config.json", "utf8"),
@@ -15,27 +10,35 @@ let config = JSON.parse(
 // Scrape every 12h
 let eventsController = new EventsController(config);
 
-// Create ipc server
-ipc.config.id = "scraper";
-ipc.config.retry = 1500;
-ipc.config.silent = true;
-
-ipc.connectTo("ws");
-
-eventsController.emitter.on("match-start", (matchId) => {
-    console.log(`Match ${matchId} started.`);
-
-    ipc.of["ws"].emit("match-start", matchId);
+// Create redis publisher
+export const publisher = createClient({
+    url: process.env.REDIS_URL,
 });
 
-eventsController.emitter.on("match-end", (matchId) => {
-    console.log(`Match ${matchId} ended.`);
+(async () => {
+    await publisher.connect();
 
-    ipc.of["ws"].emit("match-end", matchId);
-});
+    eventsController.emitter.on("match-start", async (matchId) => {
+        console.log(`Match ${matchId} started.`);
 
-eventsController.emitter.on("match-update", (matchId, type, value) => {
-    console.log(`Match ${matchId} updated.`);
+        await publisher.publish("match-start", JSON.stringify(matchId));
+    });
 
-    ipc.of["ws"].emit("match-update", { matchId, type, value });
-});
+    eventsController.emitter.on("match-end", async (matchId) => {
+        console.log(`Match ${matchId} ended.`);
+
+        await publisher.publish("match-end", JSON.stringify(matchId));
+    });
+
+    eventsController.emitter.on(
+        "match-update",
+        async (matchId, type, value) => {
+            console.log(`Match ${matchId} updated.`);
+
+            await publisher.publish(
+                "match-update",
+                JSON.stringify({ matchId, type, value }),
+            );
+        },
+    );
+})();
